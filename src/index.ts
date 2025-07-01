@@ -1,8 +1,7 @@
-import PortainerClient from 'portainer-api-client';
 import { reply, SignalRpcMessageSource } from './signal';
 import { SignalMessage } from './message';
 import { Commands } from './commands';
-import {Portainer} from "./portainer";
+import { Portainer } from './portainer';
 
 console.warn('Hello World!');
 

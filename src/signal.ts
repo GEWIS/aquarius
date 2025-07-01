@@ -87,3 +87,49 @@ export async function reply(ctx: SignalMessage, message: string, styled: boolean
     await ctx.reply(message);
   }
 }
+
+/**
+ * Send an emoji reaction to the message
+ */
+export async function emoji(ctx: SignalMessage, emoji: string) {
+  if (!ctx.client) return;
+  if (!ctx.rawMessage) {
+    console.error('No rawMessage found on context');
+    return;
+  }
+
+  const recipient = ctx.group || ctx.account; // group id or user number
+  const targetAuthor = ctx.rawMessage.envelope.source; // sender UUID of original message
+  const timestamp = ctx.rawMessage.envelope.timestamp; // timestamp of original message
+
+  if (!recipient || !targetAuthor || !timestamp) {
+    console.error('Missing required fields to send reaction');
+    return;
+  }
+
+  const apiUrl = process.env.SIGNAL_CLI_API;
+  if (!apiUrl) {
+    console.error('SIGNAL_CLI_API not set');
+    return;
+  }
+
+  try {
+    const axios = require('axios');
+    await axios.post(
+      `${apiUrl}/v1/reactions/${ctx.account}`,
+      {
+        reaction: emoji,
+        recipient: recipient,
+        target_author: targetAuthor,
+        timestamp: timestamp,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+  } catch (e) {
+    console.error('Failed to send emoji reaction:', e);
+  }
+}
