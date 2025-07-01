@@ -1,24 +1,33 @@
-import { PollingMessageSource } from './signal';
+import { SignalRpcMessageSource } from './signal';
 import { SignalMessage } from './message';
 
-console.warn('Hello World');
+console.warn('Hello World!');
 
-export function handleMessage(msg: SignalMessage) {
-  console.info(`Received message: "${msg.text}" from ${msg.sender}`);
-  // const [cmd, ...args] = msg.text.trim().split(/\s+/);
+async function handleMessage(ctx: SignalMessage) {
+  if (!ctx.client) return;
+
+  if (ctx.group) {
+    await ctx.client
+      .message()
+      .sendMessage({
+        number: ctx.account,
+        message: 'pong',
+        recipients: [ctx.group],
+      })
+      .catch((e) => console.error(e));
+  } else {
+    // fallback to private reply
+    await ctx.reply('pong');
+  }
 }
 
 if (require.main === module) {
-  const source = new PollingMessageSource(
-    process.env.SIGNAL_CLI_API!,
-    process.env.SIGNAL_NUMBER!,
-    parseInt(process.env.POLL_INTERVAL || '5', 10),
-  );
+  const source = new SignalRpcMessageSource(process.env.SIGNAL_CLI_API!);
 
-  source.onMessage((msg) => {
-    void handleMessage(msg);
+  source.onMessage(async (ctx: SignalMessage) => {
+    await handleMessage(ctx);
   });
-  source.start();
+  void source.start();
 
   console.info('Bot started.');
 }

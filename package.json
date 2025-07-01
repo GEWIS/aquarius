@@ -8,7 +8,7 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "start": "ts-node src/index.ts",
+    "start": "tsx src/index.ts",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --ignore-path .gitignore --check ./src/",
@@ -21,11 +21,12 @@
     "@types/node": "^24.0.8",
     "eslint": "^9.24.0",
     "prettier": "^3.5.3",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   },
   "dependencies": {
     "@types/axios": "^0.14.4",
-    "axios": "^1.10.0"
+    "axios": "^1.10.0",
+    "signal-rest-ts": "^0.1.1"
   }
 }

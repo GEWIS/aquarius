@@ -1,69 +1,63 @@
-import axios from 'axios';
-import { MessageSource, SignalMessage } from './message';
+import { SignalClient } from 'signal-rest-ts';
+import { MessageContext, MessageSource, SignalMessage } from './message';
 
-type EnvelopeResponse = {
-  envelope: {
-    dataMessage: {
-      message: string;
-    };
-    source: string;
-    timestamp: number;
-  };
-};
-
-export class PollingMessageSource implements MessageSource {
+export class SignalRpcMessageSource implements MessageSource {
   private readonly apiUrl: string;
+  private cb: ((msg: SignalMessage) => Promise<void>) | null = null;
+  private signalClient: SignalClient | null = null;
+  private started = false;
+  private groupsCache: { internal_id: string | undefined; id: string | undefined }[] = [];
 
-  private readonly number: string;
-
-  private interval: NodeJS.Timeout | null = null;
-
-  private cb: ((msg: SignalMessage) => void) | null = null;
-
-  private seen = new Set<number>();
-
-  private readonly pollInterval: number;
-
-  constructor(apiUrl: string, number: string, pollIntervalSec: number = 5) {
+  constructor(apiUrl: string) {
     this.apiUrl = apiUrl;
-    this.number = number;
-    this.pollInterval = pollIntervalSec * 1000;
   }
 
-  onMessage(cb: (msg: SignalMessage) => void): void {
+  async loadGroups(account: string) {
+    if (!this.signalClient) return;
+    const groups = await this.signalClient.group().getGroups(account);
+    this.groupsCache = groups.map((g) => ({ internal_id: g.internal_id, id: g.id }));
+    console.info(
+      'Groups cached:',
+      this.groupsCache.map((g) => ({ id: g.id, internal_id: g.internal_id })),
+    );
+  }
+
+  onMessage(cb: (msg: SignalMessage) => Promise<void>): void {
     this.cb = cb;
   }
 
-  start(): void {
-    if (this.interval) return;
-    this.interval = setInterval(() => void this.poll(), this.pollInterval);
+  async start(): Promise<void> {
+    if (this.started) return;
+    this.signalClient = new SignalClient(this.apiUrl);
+
+    const accounts = await this.signalClient.account().getAccounts();
+    console.info('Accounts from REST API:', accounts);
+
+    for (const account of accounts) {
+      await this.loadGroups(account);
+
+      // @ts-expect-error typing of the signal-rest-ts package is wrong
+      this.signalClient.receive().registerHandler(account, /.*/, async (context: MessageContext) => {
+        if (!this.cb) return;
+
+        const rawGroupId = context.rawMessage?.envelope?.dataMessage?.groupInfo?.groupId;
+
+        const group = rawGroupId ? this.groupsCache.find((g) => g.internal_id === rawGroupId)?.id : undefined;
+
+        const extendedContext: SignalMessage = { ...context, group };
+
+        await this.cb(extendedContext);
+      });
+
+      this.signalClient.receive().startReceiving(account);
+    }
+    this.started = true;
   }
 
   stop(): void {
-    if (this.interval) clearInterval(this.interval);
-    this.interval = null;
-  }
-
-  private async poll() {
-    if (!this.cb) return;
-    try {
-      const resp = await axios.get<EnvelopeResponse>(`${this.apiUrl}/v1/receive/${this.number}`);
-      if (resp.status === 204) return;
-      console.info('resp', resp);
-      const env = resp.data.envelope;
-      if (env?.dataMessage?.message) {
-        const msg: SignalMessage = {
-          text: env.dataMessage.message,
-          sender: env.source,
-          timestamp: env.timestamp,
-        };
-        if (!this.seen.has(msg.timestamp)) {
-          this.seen.add(msg.timestamp);
-          this.cb(msg);
-        }
-      }
-    } catch (e) {
-      console.error(e);
+    if (this.signalClient) {
+      this.signalClient.receive().stopAllReceiving();
+      this.started = false;
     }
   }
 }
