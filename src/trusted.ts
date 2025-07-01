@@ -76,8 +76,8 @@ export class TrustedNumbers {
       },
       {
         name: 'trust',
-        args: [{ name: 'number', required: true, description: 'Phone number to trust' }],
-        description: 'Trust a phone number',
+        args: [{ name: 'mention(s)', required: true, description: 'Mentioned user(s) to trust' }],
+        description: 'Trust mentioned user(s)',
       },
     );
     commands.register(
@@ -87,8 +87,8 @@ export class TrustedNumbers {
       },
       {
         name: 'untrust',
-        args: [{ name: 'number', required: true, description: 'Phone number to untrust' }],
-        description: 'Untrust a phone number',
+        args: [{ name: 'mention(s)', required: true, description: 'Mentioned user(s) to untrust' }],
+        description: 'Untrust mentioned user(s)',
       },
     );
     commands.register(
@@ -99,7 +99,7 @@ export class TrustedNumbers {
       {
         name: 'list',
         args: [],
-        description: 'List trusted phone numbers',
+        description: 'List trusted uuids',
       },
     );
   }
