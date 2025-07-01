@@ -1,3 +1,4 @@
+import fs from 'fs/promises';
 import { SignalClient } from 'signal-rest-ts';
 import axios from 'axios';
 import { MessageContext, MessageSource, SignalMessage } from './message';
@@ -89,47 +90,49 @@ export async function reply(ctx: SignalMessage, message: string) {
   }
 }
 
+export interface Reaction {
+  reaction: string;
+  recipient: string;
+  target_author: string;
+  timestamp: number;
+}
+
+export async function react(account: string, reaction: Reaction) {
+  const apiUrl = process.env.SIGNAL_CLI_API;
+  await axios
+    .post(`${apiUrl}/v1/reactions/${account}`, reaction, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    .catch((e) => console.error(e));
+}
+
 /**
  * Send an emoji reaction to the message
  */
 export async function emoji(ctx: SignalMessage, emoji: string) {
-  if (!ctx.client) return;
-  if (!ctx.rawMessage) {
-    console.error('No rawMessage found on context');
-    return;
-  }
-
   const recipient = ctx.group || ctx.account; // group id or user number
   const targetAuthor = ctx.rawMessage.envelope.source; // sender UUID of original message
   const timestamp = ctx.rawMessage.envelope.timestamp; // timestamp of original message
 
-  if (!recipient || !targetAuthor || !timestamp) {
-    console.error('Missing required fields to send reaction');
-    return;
-  }
+  await react(ctx.account, {
+    reaction: emoji,
+    recipient,
+    target_author: targetAuthor,
+    timestamp,
+  });
+}
 
-  const apiUrl = process.env.SIGNAL_CLI_API;
-  if (!apiUrl) {
-    console.error('SIGNAL_CLI_API not set');
-    return;
-  }
-
+export async function sendSavedReaction(filePath: string) {
   try {
-    await axios.post(
-      `${apiUrl}/v1/reactions/${ctx.account}`,
-      {
-        reaction: emoji,
-        recipient: recipient,
-        target_author: targetAuthor,
-        timestamp: timestamp,
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      },
-    );
-  } catch (e) {
-    console.error('Failed to send emoji reaction:', e);
+    const saved: { r: Reaction; account: string } = JSON.parse(await fs.readFile(filePath, 'utf-8')) as {
+      r: Reaction;
+      account: string;
+    };
+    await react(saved.account, saved.r);
+    await fs.unlink(filePath);
+  } catch {
+    // noop
   }
 }

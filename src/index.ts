@@ -1,6 +1,6 @@
 // @ts-expect-error WebSocket is not defined in the global scope
 import WebSocket from 'ws';
-import { SignalRpcMessageSource } from './signal';
+import { sendSavedReaction, SignalRpcMessageSource } from './signal';
 import { SignalMessage } from './message';
 import { Commands } from './commands';
 import { Portainer } from './portainer';
@@ -10,6 +10,8 @@ import { registerPortainerCommands } from './commands/portainer';
 global.WebSocket = WebSocket;
 
 console.warn('Hello World!');
+
+export const UPDATE_REQUEST_MESSAGE = '/app/data/update-request-message.json';
 
 const commands = new Commands();
 
@@ -32,6 +34,9 @@ if (import.meta.url === process.argv[1] || import.meta.url === `file://${process
     await commands.execute(ctx);
   });
   void source.start();
+
+  // If reaction was prepared, send it
+  void sendSavedReaction(UPDATE_REQUEST_MESSAGE);
 
   console.info('Bot started.');
 }

@@ -1,7 +1,10 @@
+import fs from 'fs/promises';
 import { Commands, CommandHandler } from '../commands';
 import { reply, emoji } from '../signal';
 import { Portainer } from '../portainer';
 import { Stack } from '../portainer.types';
+import { SignalMessage } from '../message';
+import { UPDATE_REQUEST_MESSAGE } from '../index';
 
 export function registerPortainerCommands(commands: Commands, portainer: Portainer) {
   const wrap = (fn: CommandHandler): CommandHandler => fn;
@@ -151,11 +154,29 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
     },
   );
 
+  const prepareReaction = async (ctx: SignalMessage, reaction: string) => {
+    const recipient = ctx.group || ctx.account;
+    const targetAuthor = ctx.rawMessage.envelope.source;
+    const timestamp = ctx.rawMessage.envelope.timestamp;
+    const r = {
+      reaction,
+      recipient,
+      target_author: targetAuthor,
+      timestamp,
+    };
+    const saved = {
+      r,
+      account: ctx.account,
+    };
+    await fs.writeFile(UPDATE_REQUEST_MESSAGE, JSON.stringify(saved, null, 2));
+  };
+
   commands.register(
     'update',
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     wrap(async (ctx, args) => {
       await emoji(ctx, '🔄');
+      await prepareReaction(ctx, '👋');
       const stack = await portainer.getStack('signal');
       if (!stack) return reply(ctx, 'Stack not found.');
 
