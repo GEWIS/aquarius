@@ -15,9 +15,8 @@ export class TrustedNumbers {
   async load() {
     try {
       const data = await fs.readFile(this.filePath, 'utf-8');
-      const arr: string[] = JSON.parse(data);
+      const arr: string[] = JSON.parse(data) as string[];
       this.trusted = new Set(arr);
-      console.log('Trusted uuids loaded:', this.trusted);
     } catch {
       this.trusted = new Set();
       await this.save();
@@ -65,7 +64,7 @@ export class TrustedNumbers {
       await emoji(ctx, '👍');
     } catch (e) {
       console.error('Error executing command:', e);
-      await reply(ctx, `Failed to execute command: ${e}`);
+      await reply(ctx, `Failed to execute command: ${String(e)}`);
     }
   }
 

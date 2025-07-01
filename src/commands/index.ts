@@ -14,7 +14,7 @@ export type CommandDescription = {
 export class Commands {
     constructor() {
         this.trusted = new TrustedNumbers();
-        this.trusted.load().then(() => console.log('Trusted numbers loaded.'));
+        void this.trusted.load();
         this.trusted.registerCommands(this);
 
         this.register('ping', ping, {
@@ -57,7 +57,7 @@ export class Commands {
             }
         } catch (e) {
             console.error('Error executing command:', e);
-            await reply(ctx, `Failed to execute command: ${e}`);
+            await reply(ctx, `Failed to execute command: ${String(e)}`);
         }
     }
 }

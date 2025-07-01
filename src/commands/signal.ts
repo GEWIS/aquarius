@@ -1,6 +1,6 @@
-import {CommandHandler, Commands} from "./index";
 import {SignalMessage} from "../message";
 import {reply, SignalRpcMessageSource} from "../signal";
+import {CommandHandler, Commands} from "./index";
 
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

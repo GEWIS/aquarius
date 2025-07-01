@@ -11,19 +11,19 @@ declare module 'portainer-api-client' {
   class PortainerClient {
     constructor(options?: PortainerClientOptions);
 
-    callAPIWithKey(
+    callAPIWithKey<T>(
       requestMethod: string,
       apiPath: string,
-      requestData?: any,
+      requestData?: Record<string, unknown>,
       requestHeaders?: Record<string, string>,
-    ): Promise<any>;
+    ): Promise<T>;
 
-    callAPI(
+    callAPI<T>(
       requestMethod: string,
       apiPath: string,
-      requestData?: any,
+      requestData?: Record<string, unknown>,
       requestHeaders?: Record<string, string>,
-    ): Promise<any>;
+    ): Promise<T>;
 
     private _getAPIAuthHeaders(): Promise<{ Authorization: string } | { 'X-API-Key': string }>;
 

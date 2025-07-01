@@ -1,4 +1,5 @@
 import { SignalClient } from 'signal-rest-ts';
+import axios from 'axios';
 import { MessageContext, MessageSource, SignalMessage } from './message';
 
 export class SignalRpcMessageSource implements MessageSource {
@@ -71,7 +72,7 @@ export class SignalRpcMessageSource implements MessageSource {
   }
 }
 
-export async function reply(ctx: SignalMessage, message: string, styled: boolean = false) {
+export async function reply(ctx: SignalMessage, message: string) {
   if (!ctx.client) return;
   if (ctx.group) {
     await ctx.client
@@ -114,7 +115,6 @@ export async function emoji(ctx: SignalMessage, emoji: string) {
   }
 
   try {
-    const axios = require('axios');
     await axios.post(
       `${apiUrl}/v1/reactions/${ctx.account}`,
       {
