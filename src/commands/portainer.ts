@@ -1,6 +1,7 @@
 import { Commands, CommandHandler } from '../commands';
 import { reply, emoji } from '../signal';
 import { Portainer } from '../portainer';
+import {Stack} from "../portainer.types";
 
 export function registerPortainerCommands(commands: Commands, portainer: Portainer) {
   const wrap = (fn: CommandHandler): CommandHandler => fn;
@@ -112,5 +113,30 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
       args: [{ name: 'stack', required: true, description: 'Stack name or ID' }],
       description: 'Restart stack (without redeploying)',
     },
+  );
+
+  commands.register(
+      'outdated',
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      wrap(async (ctx, args) => {
+          await emoji(ctx, '🔄');
+          const stacks = await portainer.listStacks();
+          const outdated = stacks.filter((stack) => stack.Status === 1);
+          const results: {stack: Stack, status: string}[] = [];
+          const promises = outdated.map(async (stack) => {
+              const status = await portainer.getImageStatus(stack);
+              results.push({stack, status});
+          });
+
+          await Promise.all(promises);
+          const msg = results.filter((r) => r.status === 'outdated').map((r) => `• ${r.stack.Name} (stack: ${r.stack.Id})`).join('\n');
+          await reply(ctx, `Stacks with outdated images:\n${msg}`);
+          await emoji(ctx, '✅');
+      }),
+      {
+          name: 'outdated',
+          args: [],
+          description: 'List stacks with outdated images',
+      },
   );
 }
