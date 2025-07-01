@@ -1,0 +1,9 @@
+{
+  "name": "aquarius",
+  "version": "1.0.0",
+  "description": "Singal to Portainer bridge",
+  "main": "index.js",
+  "repository": "git@github.com:GEWIS/aquarius.git",
+  "author": "Samuel <samuel.oosterholt20001004@gmail.com>",
+  "license": "MIT"
+}
