@@ -84,10 +84,11 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
   commands.register(
     'redeploy',
     wrap(async (ctx, args) => {
+      await emoji(ctx, '🔄');
       const stack = await portainer.getStack(args[0]);
       if (!stack) return reply(ctx, 'Stack not found.');
       await portainer.redeployStack(stack);
-      await emoji(ctx, '🔄');
+      await emoji(ctx, '✅');
     }),
     {
       name: 'redeploy',
