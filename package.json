@@ -7,9 +7,17 @@
   "author": "Samuel <samuel.oosterholt20001004@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "start": "ts-node src/index.ts"
+    "start": "ts-node src/index.ts",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --ignore-path .gitignore --check ./src/",
+    "format:fix": "prettier --ignore-path .gitignore --write ./src/"
   },
   "devDependencies": {
+    "@gewis/eslint-config-typescript": "^2.4.0",
+    "@gewis/prettier-config": "^2.2.2",
+    "eslint": "^9.24.0",
+    "prettier": "^3.5.3",
     "@types/node": "^24.0.8",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
