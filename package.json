@@ -28,6 +28,7 @@
     "@types/axios": "^0.14.4",
     "axios": "^1.10.0",
     "log4js": "^6.9.1",
+    "portainer-api-client": "^0.2.0",
     "signal-rest-ts": "^0.1.1"
   }
 }

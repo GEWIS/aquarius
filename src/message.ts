@@ -21,7 +21,7 @@ interface RawMessage {
         uuid: string;
         start: number;
         length: number;
-      }[]
+      }[];
       groupInfo?: {
         groupId: string;
         groupName: string;

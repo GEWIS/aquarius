@@ -45,7 +45,7 @@ export class SignalRpcMessageSource implements MessageSource {
 
           const group = rawGroupId ? this.groupsCache.find((g) => g.internal_id === rawGroupId)?.id : undefined;
 
-          const extendedContext: SignalMessage = {...context, group};
+          const extendedContext: SignalMessage = { ...context, group };
 
           // check if message mentions bot
           const mentions = extendedContext.rawMessage.envelope.dataMessage.mentions;
@@ -75,14 +75,14 @@ export async function reply(ctx: SignalMessage, message: string, styled: boolean
   if (!ctx.client) return;
   if (ctx.group) {
     await ctx.client
-        .message()
-        .sendMessage({
-          number: ctx.account,
-          message: message,
-          recipients: [ctx.group],
-          text_mode: "styled",
-        })
-        .catch((e) => console.error(e));
+      .message()
+      .sendMessage({
+        number: ctx.account,
+        message: message,
+        recipients: [ctx.group],
+        text_mode: 'styled',
+      })
+      .catch((e) => console.error(e));
   } else {
     await ctx.reply(message);
   }
