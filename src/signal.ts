@@ -38,15 +38,24 @@ export class SignalRpcMessageSource implements MessageSource {
 
       // @ts-expect-error typing of the signal-rest-ts package is wrong
       this.signalClient.receive().registerHandler(account, /.*/, async (context: MessageContext) => {
-        if (!this.cb) return;
+        try {
+          if (!this.cb) return;
 
-        const rawGroupId = context.rawMessage?.envelope?.dataMessage?.groupInfo?.groupId;
+          const rawGroupId = context.rawMessage?.envelope?.dataMessage?.groupInfo?.groupId;
 
-        const group = rawGroupId ? this.groupsCache.find((g) => g.internal_id === rawGroupId)?.id : undefined;
+          const group = rawGroupId ? this.groupsCache.find((g) => g.internal_id === rawGroupId)?.id : undefined;
 
-        const extendedContext: SignalMessage = { ...context, group };
+          const extendedContext: SignalMessage = {...context, group};
 
-        await this.cb(extendedContext);
+          // check if message mentions bot
+          const mentions = extendedContext.rawMessage.envelope.dataMessage.mentions;
+          const mention = mentions?.find((m) => m.number === account) !== undefined;
+          if (mention) {
+            await this.cb(extendedContext);
+          }
+        } catch (e) {
+          console.error(e);
+        }
       });
 
       this.signalClient.receive().startReceiving(account);
@@ -59,5 +68,22 @@ export class SignalRpcMessageSource implements MessageSource {
       this.signalClient.receive().stopAllReceiving();
       this.started = false;
     }
+  }
+}
+
+export async function reply(ctx: SignalMessage, message: string, styled: boolean = false) {
+  if (!ctx.client) return;
+  if (ctx.group) {
+    await ctx.client
+        .message()
+        .sendMessage({
+          number: ctx.account,
+          message: message,
+          recipients: [ctx.group],
+          text_mode: "styled",
+        })
+        .catch((e) => console.error(e));
+  } else {
+    await ctx.reply(message);
   }
 }

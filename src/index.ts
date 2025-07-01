@@ -1,31 +1,16 @@
 import { SignalRpcMessageSource } from './signal';
 import { SignalMessage } from './message';
+import {Commands} from "./commands";
 
 console.warn('Hello World!');
 
-async function handleMessage(ctx: SignalMessage) {
-  if (!ctx.client) return;
-
-  if (ctx.group) {
-    await ctx.client
-      .message()
-      .sendMessage({
-        number: ctx.account,
-        message: 'pong',
-        recipients: [ctx.group],
-      })
-      .catch((e) => console.error(e));
-  } else {
-    // fallback to private reply
-    await ctx.reply('pong');
-  }
-}
+const commands = new Commands();
 
 if (require.main === module) {
   const source = new SignalRpcMessageSource(process.env.SIGNAL_CLI_API!);
 
   source.onMessage(async (ctx: SignalMessage) => {
-    await handleMessage(ctx);
+    await commands.execute(ctx);
   });
   void source.start();
 

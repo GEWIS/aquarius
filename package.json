@@ -27,6 +27,7 @@
   "dependencies": {
     "@types/axios": "^0.14.4",
     "axios": "^1.10.0",
+    "log4js": "^6.9.1",
     "signal-rest-ts": "^0.1.1"
   }
 }

@@ -2,12 +2,12 @@ import { SignalClient } from 'signal-rest-ts';
 
 interface RawMessage {
   envelope: {
-    source: string; // UUID of sender device
-    sourceNumber: string | null; // Usually null for sealed sender
+    source: string;
+    sourceNumber: string | null;
     sourceUuid: string;
     sourceName: string;
     sourceDevice: number;
-    timestamp: number; // Message timestamp
+    timestamp: number;
     serverReceivedTimestamp: number;
     serverDeliveredTimestamp: number;
     dataMessage: {
@@ -15,15 +15,22 @@ interface RawMessage {
       message: string;
       expiresInSeconds: number;
       viewOnce: boolean;
+      mentions?: {
+        name: string;
+        number: string;
+        uuid: string;
+        start: number;
+        length: number;
+      }[]
       groupInfo?: {
         groupId: string;
         groupName: string;
         revision: number;
-        type: string; // e.g. "DELIVER"
+        type: string;
       };
     };
   };
-  account: string; // Your bot's registered number
+  account: string;
 }
 
 export interface MessageContext {
