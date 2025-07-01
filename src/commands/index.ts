@@ -57,6 +57,7 @@ export class Commands {
       }
     } catch (e) {
       console.error('Error executing command:', e);
+      await emoji(ctx, '❌');
       await reply(ctx, `Failed to execute command: ${String(e)}`);
     }
   }
