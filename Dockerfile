@@ -15,7 +15,8 @@ RUN GIT_TAG=$(git describe --tags --always) && \
 ENV NODE_ENV=production
 
 # Also expose the git vars to runtime env
-ENV GIT_TAG=$GIT_TAG
-ENV GIT_HASH=$GIT_HASH
+ENV DOCKER_VERSION=$DOCKER_VERSION
+ENV GIT_COMMIT_SHA=$GIT_COMMIT_SHA
+ENV GIT_COMMIT_BRANCH=$GIT_COMMIT_BRANCH
 
 CMD ["node", "--import", "tsx", "dist/src/index.js"]
