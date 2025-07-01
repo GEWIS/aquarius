@@ -1,5 +1,13 @@
 import { SignalClient } from 'signal-rest-ts';
 
+export interface MessageMention {
+  name: string;
+  number: string;
+  uuid: string;
+  start: number;
+  length: number;
+}
+
 interface RawMessage {
   envelope: {
     source: string;
@@ -15,13 +23,7 @@ interface RawMessage {
       message: string;
       expiresInSeconds: number;
       viewOnce: boolean;
-      mentions?: {
-        name: string;
-        number: string;
-        uuid: string;
-        start: number;
-        length: number;
-      }[];
+      mentions?: MessageMention[];
       groupInfo?: {
         groupId: string;
         groupName: string;

@@ -40,7 +40,7 @@ export class Portainer {
         'GET',
         `/api/stacks/${stack.Id}/images_status?refresh=true`,
       )) as {
-          Status: 'updated' | 'outdated';
+        Status: 'updated' | 'outdated';
       };
       const msg = imageStatus.Status === 'updated' ? 'Images are up to date.' : 'Images are outdated.';
       const running = status === 1 ? '[✅ Up]' : '[❌ Down]';
@@ -152,7 +152,7 @@ export class Portainer {
       }
 
       const fileResponse = await this.client.callAPIWithKey('GET', `/api/stacks/${stack.Id}/file`).catch(async (e) => {
-          console.error('Failed to fetch stack file:', e);
+        console.error('Failed to fetch stack file:', e);
       });
 
       if (!fileResponse || !fileResponse.StackFileContent) {
@@ -169,7 +169,7 @@ export class Portainer {
         PullImage: true,
       };
 
-      await this.client.callAPIWithKey('PUT', `/api/stacks/${stack.Id}?endpointId=${stack.EndpointId}`, updatePayload)
+      await this.client.callAPIWithKey('PUT', `/api/stacks/${stack.Id}?endpointId=${stack.EndpointId}`, updatePayload);
       await emoji(ctx, '🔄');
     } catch (e) {
       console.error('Error redeploying stack:', e);
