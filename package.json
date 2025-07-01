@@ -7,6 +7,7 @@
   "author": "Samuel <samuel.oosterholt20001004@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "build": "tsc",
     "start": "ts-node src/index.ts",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
@@ -22,5 +23,9 @@
     "prettier": "^3.5.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@types/axios": "^0.14.4",
+    "axios": "^1.10.0"
   }
 }
