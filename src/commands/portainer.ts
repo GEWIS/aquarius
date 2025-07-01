@@ -1,7 +1,7 @@
 import { Commands, CommandHandler } from '../commands';
 import { reply, emoji } from '../signal';
 import { Portainer } from '../portainer';
-import {Stack} from "../portainer.types";
+import { Stack } from '../portainer.types';
 
 export function registerPortainerCommands(commands: Commands, portainer: Portainer) {
   const wrap = (fn: CommandHandler): CommandHandler => fn;
@@ -103,9 +103,17 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
     wrap(async (ctx, args) => {
       await emoji(ctx, '🔄');
       const stack = await portainer.getStack(args[0]);
-      if (!stack) return reply(ctx, 'Stack not found.');
+      if (!stack) {
+        await reply(ctx, 'Stack not found.');
+        return;
+      }
       void portainer.stopStack(stack).then(() => {
-          setTimeout(() => portainer.startStack(stack).then(() => emoji(ctx, '✅')), 1000);
+        setTimeout(() => {
+          portainer
+            .startStack(stack)
+            .then(() => emoji(ctx, '✅'))
+            .catch(console.error);
+        }, 1000);
       });
     }),
     {
@@ -116,43 +124,54 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
   );
 
   commands.register(
-      'outdated',
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      wrap(async (ctx, args) => {
-          await emoji(ctx, '🔄');
-          const stacks = await portainer.listStacks();
-          const outdated = stacks.filter((stack) => stack.Status === 1);
-          const results: {stack: Stack, status: string}[] = [];
-          const promises = outdated.map(async (stack) => {
-              const status = await portainer.getImageStatus(stack);
-              results.push({stack, status});
-          });
+    'outdated',
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    wrap(async (ctx, args) => {
+      await emoji(ctx, '🔄');
+      const stacks = await portainer.listStacks();
+      const outdated = stacks.filter((stack) => stack.Status === 1);
+      const results: { stack: Stack; status: string }[] = [];
+      const promises = outdated.map(async (stack) => {
+        const status = await portainer.getImageStatus(stack);
+        results.push({ stack, status });
+      });
 
-          await Promise.all(promises);
-          const msg = results.filter((r) => r.status === 'outdated').map((r) => `• ${r.stack.Name} (stack: ${r.stack.Id})`).join('\n');
-          await reply(ctx, `Stacks with outdated images:\n${msg}`);
-          await emoji(ctx, '✅');
-      }),
-      {
-          name: 'outdated',
-          args: [],
-          description: 'List stacks with outdated images',
-      },
+      await Promise.all(promises);
+      const msg = results
+        .filter((r) => r.status === 'outdated')
+        .map((r) => `• ${r.stack.Name} (stack: ${r.stack.Id})`)
+        .join('\n');
+      await reply(ctx, `Stacks with outdated images:\n${msg}`);
+      await emoji(ctx, '✅');
+    }),
+    {
+      name: 'outdated',
+      args: [],
+      description: 'List stacks with outdated images',
+    },
   );
 
   commands.register(
-      'update',
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      wrap(async (ctx, args) => {
-          await emoji(ctx, '🔄');
-          const stack = await portainer.getStack('signal');
-          if (!stack) return reply(ctx, 'Stack not found.');
-          await portainer.redeployStack(stack);
-          await emoji(ctx, '✅');
-      }),
-      {
-          name: 'update',
-          args: [],
-          description: 'Alias for `redeploy signal` to update this bot',
-      })
+    'update',
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    wrap(async (ctx, args) => {
+      await emoji(ctx, '🔄');
+      const stack = await portainer.getStack('signal');
+      if (!stack) return reply(ctx, 'Stack not found.');
+
+      const status = await portainer.getImageStatus(stack);
+      if (status === 'updated') {
+        await emoji(ctx, '✅');
+        return;
+      }
+
+      await portainer.redeployStack(stack);
+      await emoji(ctx, '✅');
+    }),
+    {
+      name: 'update',
+      args: [],
+      description: 'Alias for `redeploy signal` to update this bot',
+    },
+  );
 }
