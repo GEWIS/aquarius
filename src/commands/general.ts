@@ -1,5 +1,7 @@
 import { reply } from '../signal';
 import { SignalMessage } from '../message';
+import { logger } from '../index';
+import { env } from '../env';
 import { CommandDescription, CommandHandler } from './index';
 
 export function ping(ctx: SignalMessage, args: string[]): Promise<void> {
@@ -42,10 +44,41 @@ export function help(commands: Map<string, { description: CommandDescription }>)
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function version(ctx: SignalMessage, args: string[]): Promise<void> {
-  if (process.env.GIT_COMMIT_SHA === undefined || process.env.DOCKER_VERSION === undefined) {
-    return reply(ctx, 'Version unknown.');
+export async function fetchLatestVersion(repo: string): Promise<string> {
+  try {
+    const response = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
+      headers: {
+        Accept: 'application/vnd.github.v3+json',
+      },
+    });
+
+    if (!response.ok) {
+      logger.error('Error fetching latest version:', response.statusText);
+      return 'unknown';
+    }
+
+    const data = (await response.json()) as { tag_name: string };
+    return data.tag_name;
+  } catch (error) {
+    logger.error('Error fetching latest version:', error);
+    return 'unknown';
   }
-  return reply(ctx, `Version: ${process.env.DOCKER_VERSION} (${process.env.GIT_COMMIT_SHA})`);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function version(ctx: SignalMessage, args: string[]): Promise<void> {
+  const { DOCKER_VERSION, GIT_COMMIT_SHA, REPOSITORY } = env;
+
+  try {
+    const latestVersion = await fetchLatestVersion(REPOSITORY);
+    if (latestVersion === 'unknown') {
+      await reply(ctx, `Current Version: ${DOCKER_VERSION} (${GIT_COMMIT_SHA}), Latest Version: unknown`);
+    } else {
+      const message = `Current Version: ${DOCKER_VERSION} (${GIT_COMMIT_SHA}), Latest Version: ${latestVersion}`;
+      await reply(ctx, message);
+    }
+  } catch (error) {
+    await reply(ctx, 'Could not fetch the latest version.');
+    console.error('Error comparing versions:', error);
+  }
 }

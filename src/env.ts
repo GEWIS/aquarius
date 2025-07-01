@@ -4,4 +4,7 @@ export const env = {
   PORTAINER_API_KEY: process.env.PORTAINER_API_KEY ?? '',
   LOG_LEVEL: process.env.LOG_LEVEL ?? 'info',
   STACK_NAME: process.env.STACK_NAME ?? 'signal',
+  DOCKER_VERSION: process.env.DOCKER_VERSION ?? 'unknown',
+  GIT_COMMIT_SHA: process.env.GIT_COMMIT_SHA ?? 'unknown',
+  REPOSITORY: process.env.REPOSITORY ?? 'gewis/aquarius',
 };
