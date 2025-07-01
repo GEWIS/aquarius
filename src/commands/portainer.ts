@@ -96,4 +96,21 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
       description: 'Redeploy stack',
     },
   );
+
+  commands.register(
+    'restart',
+    wrap(async (ctx, args) => {
+      await emoji(ctx, '🔄');
+      const stack = await portainer.getStack(args[0]);
+      if (!stack) return reply(ctx, 'Stack not found.');
+      void portainer.stopStack(stack).then(() => {
+          setTimeout(() => portainer.startStack(stack).then(() => emoji(ctx, '✅')), 1000);
+      });
+    }),
+    {
+      name: 'restart',
+      args: [{ name: 'stack', required: true, description: 'Stack name or ID' }],
+      description: 'Restart stack (without redeploying)',
+    },
+  );
 }
