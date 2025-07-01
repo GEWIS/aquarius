@@ -1,17 +1,10 @@
-FROM node:22-bookworm
+FROM node:20-bookworm
 
 WORKDIR /app
+COPY . .
 
-# Copy package files for caching
-COPY package.json yarn.lock ./
-
-# Install production dependencies only
-RUN yarn install --frozen-lockfile --production
-
-# Copy compiled JS and package metadata
-COPY dist ./dist
-COPY package.json ./
-
+RUN yarn install --frozen-lockfile
+RUN yarn build
 ENV NODE_ENV=production
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "--import", "tsx", "dist/src/index.js"]

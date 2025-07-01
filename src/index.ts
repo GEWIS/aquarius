@@ -1,3 +1,6 @@
+// @ts-expect-error WebSocket is not defined in the global scope
+import WebSocket from 'ws';
+global.WebSocket = WebSocket;
 import { SignalRpcMessageSource } from './signal';
 import { SignalMessage } from './message';
 import { Commands } from './commands';
@@ -9,7 +12,7 @@ console.warn('Hello World!');
 
 const commands = new Commands();
 
-if (require.main === module) {
+if (import.meta.url === process.argv[1] || import.meta.url === `file://${process.argv[1]}`) {
   const source = new SignalRpcMessageSource(process.env.SIGNAL_CLI_API!);
 
   const portainerURL = process.env.PORTAINER_URL;

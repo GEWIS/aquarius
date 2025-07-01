@@ -37,7 +37,7 @@ export function help(commands: Map<string, { description: CommandDescription }>)
             } else {
                 message += 'No arguments.';
             }
-            await reply(ctx, message, true);
+            await reply(ctx, message);
         }
     };
 };

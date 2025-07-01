@@ -6,9 +6,10 @@
   "repository": "git@github.com:GEWIS/aquarius.git",
   "author": "Samuel <samuel.oosterholt20001004@gmail.com>",
   "license": "MIT",
+  "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "tsx src/index.ts",
+    "start": "src/tsx index.ts",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --ignore-path .gitignore --check ./src/",
@@ -29,6 +30,7 @@
     "axios": "^1.10.0",
     "log4js": "^6.9.1",
     "portainer-api-client": "^0.2.0",
-    "signal-rest-ts": "^0.1.1"
+    "signal-rest-ts": "^0.1.1",
+    "ws": "^8.13.0"
   }
 }
