@@ -1,7 +1,7 @@
 import { SignalMessage } from '../message';
 import { emoji, reply } from '../signal';
 import { TrustedNumbers } from '../trusted';
-import { help, ping } from './general';
+import { help, ping, version } from './general';
 
 export type CommandHandler = (ctx: SignalMessage, args: string[]) => Promise<void>;
 
@@ -22,6 +22,13 @@ export class Commands {
       args: [],
       name: 'ping',
     });
+
+    this.register('version', version, {
+      description: 'Show version',
+      args: [],
+      name: 'version',
+    });
+
     this.register('help', help(this.commands), {
       name: 'help',
       args: [{ name: 'command', required: false, description: 'Command to get detailed help for' }],

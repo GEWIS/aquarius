@@ -41,3 +41,11 @@ export function help(commands: Map<string, { description: CommandDescription }>)
     }
   };
 }
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function version(ctx: SignalMessage, args: string[]): Promise<void> {
+  if (process.env.GIT_TAG === undefined || process.env.GIT_HASH === undefined) {
+    return reply(ctx, 'Version unknown.');
+  }
+  return reply(ctx, `Version: ${process.env.GIT_TAG} (${process.env.GIT_HASH})`);
+}
