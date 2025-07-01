@@ -1,6 +1,6 @@
 // @ts-expect-error WebSocket is not defined in the global scope
 import WebSocket from 'ws';
-import { getLogger } from 'log4js';
+import log4js from 'log4js';
 import { sendSavedReaction, SignalRpcMessageSource } from './signal';
 import { SignalMessage } from './message';
 import { Commands } from './commands';
@@ -10,7 +10,7 @@ import { registerPortainerCommands } from './commands/portainer';
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 global.WebSocket = WebSocket;
 
-export const logger = getLogger('🤖');
+export const logger = log4js.getLogger('🤖');
 logger.level = process.env['LOG_LEVEL'] || 'info';
 
 export const UPDATE_REQUEST_MESSAGE = '/app/data/update-request-message.json';
