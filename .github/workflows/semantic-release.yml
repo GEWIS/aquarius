@@ -16,9 +16,5 @@ jobs:
     with:
       projects: "['.']"
       version: ${{ needs.versioning.outputs.next-version }}
-      docker-registry: "abc.docker-registry.gewis.nl"
       docker-paths: "['eou/aquarius']"
       github-registry: "true"
-    secrets:
-      REGISTRY_USERNAME: ${{ secrets.SVC_GH_ABCEOU_USERNAME }}
-      REGISTRY_PASSWORD: ${{ secrets.SVC_GH_ABCEOU_PWD }}
