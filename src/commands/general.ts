@@ -77,7 +77,7 @@ export async function version(ctx: SignalMessage, args: string[]): Promise<void>
   try {
     const latestVersion = await fetchLatestVersion(REPOSITORY);
     if (isLatest(latestVersion)) {
-      await reply(ctx, `[✅] Current Version: ${DOCKER_VERSION} (${GIT_COMMIT_SHA}), [latest]`);
+      await reply(ctx, `[✅] Current Version: ${DOCKER_VERSION} (${GIT_COMMIT_SHA})`);
       return;
     } else if (latestVersion === 'unknown') {
       await reply(ctx, `[❔] Current Version: ${DOCKER_VERSION} (${GIT_COMMIT_SHA}), Latest Version: unknown`);
