@@ -51,8 +51,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/gewis/aqarius:${{ env.DOCKER_VERSION }}
-            ghcr.io/gewis/aqarius:latest
+            ghcr.io/gewis/aquarius:${{ env.DOCKER_VERSION }}
+            ghcr.io/gewis/aquarius:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
