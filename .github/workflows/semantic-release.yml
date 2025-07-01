@@ -51,8 +51,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/eau/${{ github.repository }}:${{ env.DOCKER_VERSION }}
-            ghcr.io/eau/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ env.DOCKER_VERSION }}
+            ghcr.io/${{ github.repository }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
