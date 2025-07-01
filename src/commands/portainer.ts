@@ -139,4 +139,20 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
           description: 'List stacks with outdated images',
       },
   );
+
+  commands.register(
+      'update',
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      wrap(async (ctx, args) => {
+          await emoji(ctx, '🔄');
+          const stack = await portainer.getStack('signal');
+          if (!stack) return reply(ctx, 'Stack not found.');
+          await portainer.redeployStack(stack);
+          await emoji(ctx, '✅');
+      }),
+      {
+          name: 'update',
+          args: [],
+          description: 'Alias for `redeploy signal` to update this bot',
+      })
 }
