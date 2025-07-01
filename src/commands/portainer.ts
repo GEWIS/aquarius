@@ -5,6 +5,7 @@ import { Portainer } from '../portainer';
 import { Stack } from '../portainer.types';
 import { SignalMessage } from '../message';
 import { logger, UPDATE_REQUEST_MESSAGE } from '../index';
+import { env } from '../env';
 
 export function registerPortainerCommands(commands: Commands, portainer: Portainer) {
   const wrap = (fn: CommandHandler): CommandHandler => fn;
@@ -71,7 +72,14 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
   commands.register(
     'status',
     wrap(async (ctx, args) => {
-      const stack = await portainer.getStack(args[0]);
+      let stackName;
+      if (!args[0]) {
+        stackName = env.STACK_NAME;
+      } else {
+        stackName = args[0];
+      }
+
+      const stack = await portainer.getStack(stackName);
       if (!stack) return reply(ctx, 'Stack not found.');
       const status = stack.Status === 1 ? '[✅ Up]' : '[❌ Down]';
       const imgStatus = await portainer.getImageStatus(stack);
@@ -177,8 +185,8 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
     wrap(async (ctx, args) => {
       await emoji(ctx, '🔄');
       await prepareReaction(ctx, '👋');
-      const stack = await portainer.getStack('signal');
-      if (!stack) return reply(ctx, 'Stack not found.');
+      const stack = await portainer.getStack(env.STACK_NAME);
+      if (!stack) return reply(ctx, 'Stack not found, has the env var STACK_NAME been set?');
 
       const status = await portainer.getImageStatus(stack);
       if (status === 'updated') {

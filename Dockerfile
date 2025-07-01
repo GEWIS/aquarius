@@ -6,11 +6,16 @@ COPY . .
 RUN yarn install --frozen-lockfile
 RUN yarn build
 
+ARG DOCKER_VERSION
+ARG GIT_COMMIT_SHA
+ARG GIT_COMMIT_BRANCH
+
 # Get git tag and hash and store in ENV variables
 RUN GIT_TAG=$(git describe --tags --always) && \
     GIT_HASH=$(git rev-parse --short HEAD) && \
-    echo "GIT_TAG=${GIT_TAG}" >> /app/.env && \
-    echo "GIT_HASH=${GIT_HASH}" >> /app/.env
+    echo "DOCKER_VERSION=${DOCKER_VERSION}" >> /app/.env && \
+    echo "GIT_COMMIT_SHA=${GIT_COMMIT_SHA}" >> /app/.env && \
+    echo "GIT_COMMIT_BRANCH=${GIT_COMMIT_BRANCH}" >> /app/.env
 
 ENV NODE_ENV=production
 

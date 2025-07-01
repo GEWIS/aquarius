@@ -3,6 +3,7 @@ import { SignalClient } from 'signal-rest-ts';
 import axios from 'axios';
 import { MessageContext, MessageSource, SignalMessage } from './message';
 import { logger } from './index';
+import {env} from "./env";
 
 export class SignalRpcMessageSource implements MessageSource {
   private readonly apiUrl: string;
@@ -99,7 +100,7 @@ export interface Reaction {
 }
 
 export async function react(account: string, reaction: Reaction) {
-  const apiUrl = process.env.SIGNAL_CLI_API;
+  const apiUrl = env.SIGNAL_CLI_API;
   await axios
     .post(`${apiUrl}/v1/reactions/${account}`, reaction, {
       headers: {
