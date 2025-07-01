@@ -7,7 +7,7 @@ import { Commands } from './commands';
 import { Portainer } from './portainer';
 import { registerCommands } from './commands/signal';
 import { registerPortainerCommands } from './commands/portainer';
-import {env} from "./env";
+import { env } from './env';
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 global.WebSocket = WebSocket;
 
@@ -19,11 +19,11 @@ export const UPDATE_REQUEST_MESSAGE = '/app/data/update-request-message.json';
 const commands = new Commands();
 
 if (import.meta.url === process.argv[1] || import.meta.url === `file://${process.argv[1]}`) {
-  const source = new SignalRpcMessageSource(env.SIGNAL_CLI_API!);
+  const source = new SignalRpcMessageSource(env.SIGNAL_CLI_API);
 
   const { PORTAINER_URL, PORTAINER_API_KEY } = env;
 
-  if (PORTAINER_URL === undefined || PORTAINER_API_KEY === undefined) {
+  if (PORTAINER_URL === '' || PORTAINER_API_KEY === '') {
     logger.warn('Portainer URL or API key not set. Skipping Portainer integration.');
   } else {
     const portainer = new Portainer(PORTAINER_URL, PORTAINER_API_KEY);
