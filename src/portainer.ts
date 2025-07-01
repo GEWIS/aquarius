@@ -10,7 +10,7 @@ export class Portainer {
 
   // Return an array of Stack, empty if none found
   async listStacks(): Promise<Stack[]> {
-    const stacks = (await this.client.callAPIWithKey('GET', '/api/stacks'));
+    const stacks = await this.client.callAPIWithKey('GET', '/api/stacks');
     if (Array.isArray(stacks)) {
       return stacks as Stack[];
     }
@@ -26,7 +26,7 @@ export class Portainer {
 
   private async getStackById(id: number): Promise<Stack | null> {
     try {
-      const stack = (await this.client.callAPIWithKey('GET', `/api/stacks/${id}`));
+      const stack = await this.client.callAPIWithKey('GET', `/api/stacks/${id}`);
       return stack as Stack;
     } catch {
       return null;
@@ -40,24 +40,18 @@ export class Portainer {
   }
 
   async startStack(stack: Stack): Promise<void> {
-    await this.client.callAPIWithKey(
-        'POST',
-        `/api/stacks/${stack.Id}/start?endpointId=${stack.EndpointId}`,
-    );
+    await this.client.callAPIWithKey('POST', `/api/stacks/${stack.Id}/start?endpointId=${stack.EndpointId}`);
   }
 
   async stopStack(stack: Stack): Promise<void> {
-    await this.client.callAPIWithKey(
-        'POST',
-        `/api/stacks/${stack.Id}/stop?endpointId=${stack.EndpointId}`,
-    );
+    await this.client.callAPIWithKey('POST', `/api/stacks/${stack.Id}/stop?endpointId=${stack.EndpointId}`);
   }
 
   async redeployStack(stack: Stack): Promise<void> {
-    const fileResponse: { StackFileContent: string } = (await this.client.callAPIWithKey(
-        'GET',
-        `/api/stacks/${stack.Id}/file`,
-    ));
+    const fileResponse: { StackFileContent: string } = await this.client.callAPIWithKey(
+      'GET',
+      `/api/stacks/${stack.Id}/file`,
+    );
 
     if (!fileResponse?.StackFileContent) {
       throw new Error('Stack file content missing');
@@ -72,24 +66,19 @@ export class Portainer {
       PullImage: true,
     };
 
-    await this.client.callAPIWithKey(
-        'PUT',
-        `/api/stacks/${stack.Id}?endpointId=${stack.EndpointId}`,
-        updatePayload,
-    );
+    await this.client.callAPIWithKey('PUT', `/api/stacks/${stack.Id}?endpointId=${stack.EndpointId}`, updatePayload);
   }
 
   async getImageStatus(stack: Stack): Promise<'updated' | 'outdated' | 'unknown'> {
     try {
-      const res: { Status: 'updated' | 'outdated' } = (await this.client.callAPIWithKey(
-          'GET',
-          `/api/stacks/${stack.Id}/images_status?refresh=true`,
-      ));
+      const res: { Status: 'updated' | 'outdated' } = await this.client.callAPIWithKey(
+        'GET',
+        `/api/stacks/${stack.Id}/images_status?refresh=true`,
+      );
 
       return res.Status ?? 'unknown';
     } catch {
       return 'unknown';
     }
   }
-
 }

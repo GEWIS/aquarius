@@ -1,12 +1,13 @@
 // @ts-expect-error WebSocket is not defined in the global scope
 import WebSocket from 'ws';
-global.WebSocket = WebSocket;
 import { SignalRpcMessageSource } from './signal';
 import { SignalMessage } from './message';
 import { Commands } from './commands';
 import { Portainer } from './portainer';
-import {registerCommands} from "./commands/signal";
-import {registerPortainerCommands} from "./commands/portainer";
+import { registerCommands } from './commands/signal';
+import { registerPortainerCommands } from './commands/portainer';
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+global.WebSocket = WebSocket;
 
 console.warn('Hello World!');
 
