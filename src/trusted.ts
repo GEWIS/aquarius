@@ -4,7 +4,7 @@ import { SignalMessage } from './message';
 import { emoji, reply } from './signal';
 
 export class TrustedNumbers {
-  private filePath: string;
+  private readonly filePath: string;
   private trusted: Set<string> = new Set();
   loaded = false;
 

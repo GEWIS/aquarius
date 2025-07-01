@@ -1,7 +1,9 @@
-import { reply, SignalRpcMessageSource } from './signal';
+import { SignalRpcMessageSource } from './signal';
 import { SignalMessage } from './message';
 import { Commands } from './commands';
 import { Portainer } from './portainer';
+import {registerCommands} from "./commands/signal";
+import {registerPortainerCommands} from "./commands/portainer";
 
 console.warn('Hello World!');
 
@@ -17,20 +19,10 @@ if (require.main === module) {
     console.warn('Portainer URL or API key not set. Skipping Portainer integration.');
   } else {
     const portainer = new Portainer(portainerURL, portainerAPIKey);
-    portainer.registerCommands(commands);
+    registerPortainerCommands(commands, portainer);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const reloadGroups = async (ctx: SignalMessage, args: string[]) => {
-    await source.loadGroups(ctx.account);
-    await reply(ctx, 'Groups reloaded.');
-  };
-
-  commands.register('reload', reloadGroups, {
-    name: 'reload',
-    args: [],
-    description: 'Reload groups from Signal API',
-  });
+  registerCommands(commands, source);
 
   source.onMessage(async (ctx: SignalMessage) => {
     await commands.execute(ctx);
