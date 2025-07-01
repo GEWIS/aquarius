@@ -65,13 +65,21 @@ export async function fetchLatestVersion(repo: string): Promise<string> {
   }
 }
 
+export function isLatest(version: string): boolean {
+  const versionTag = `v${env.DOCKER_VERSION.split(':')[0]}`;
+  return version === versionTag;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function version(ctx: SignalMessage, args: string[]): Promise<void> {
   const { DOCKER_VERSION, GIT_COMMIT_SHA, REPOSITORY } = env;
 
   try {
     const latestVersion = await fetchLatestVersion(REPOSITORY);
-    if (latestVersion === 'unknown') {
+    if (isLatest(latestVersion)) {
+      await reply(ctx, `Current Version: ${DOCKER_VERSION} (${GIT_COMMIT_SHA}), [latest]`);
+      return;
+    } else if (latestVersion === 'unknown') {
       await reply(ctx, `Current Version: ${DOCKER_VERSION} (${GIT_COMMIT_SHA}), Latest Version: unknown`);
     } else {
       const message = `Current Version: ${DOCKER_VERSION} (${GIT_COMMIT_SHA}), Latest Version: ${latestVersion}`;
