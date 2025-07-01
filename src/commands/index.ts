@@ -1,6 +1,7 @@
 import { SignalMessage } from '../message';
 import { emoji, reply } from '../signal';
 import { TrustedNumbers } from '../trusted';
+import { logger } from '../index';
 import { help, ping, version } from './general';
 
 export type CommandHandler = (ctx: SignalMessage, args: string[]) => Promise<void>;
@@ -76,7 +77,7 @@ export class Commands {
         await command.handler(ctx, args);
       }
     } catch (e) {
-      console.error('Error executing command:', e);
+      logger.error('Error executing command:', e);
       await emoji(ctx, '❌');
       await reply(ctx, `Failed to execute command: ${String(e)}`);
     }

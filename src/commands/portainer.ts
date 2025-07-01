@@ -4,7 +4,7 @@ import { reply, emoji } from '../signal';
 import { Portainer } from '../portainer';
 import { Stack } from '../portainer.types';
 import { SignalMessage } from '../message';
-import { UPDATE_REQUEST_MESSAGE } from '../index';
+import { logger, UPDATE_REQUEST_MESSAGE } from '../index';
 
 export function registerPortainerCommands(commands: Commands, portainer: Portainer) {
   const wrap = (fn: CommandHandler): CommandHandler => fn;
@@ -115,7 +115,7 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
           portainer
             .startStack(stack)
             .then(() => emoji(ctx, '✅'))
-            .catch(console.error);
+            .catch((e) => logger.error(e));
         }, 1000);
       });
     }),

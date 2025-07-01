@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import { Commands } from './commands';
 import { SignalMessage } from './message';
 import { emoji, reply } from './signal';
+import { logger } from './index';
 
 export class TrustedNumbers {
   private readonly filePath: string;
@@ -16,6 +17,7 @@ export class TrustedNumbers {
     try {
       const data = await fs.readFile(this.filePath, 'utf-8');
       const arr: string[] = JSON.parse(data) as string[];
+      logger.debug('Trusted uuids loaded:', arr);
       this.trusted = new Set(arr);
     } catch {
       this.trusted = new Set();
@@ -63,7 +65,7 @@ export class TrustedNumbers {
       }
       await emoji(ctx, '👍');
     } catch (e) {
-      console.error('Error executing command:', e);
+      logger.error('Error executing command:', e);
       await reply(ctx, `Failed to execute command: ${String(e)}`);
     }
   }

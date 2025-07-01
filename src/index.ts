@@ -1,5 +1,6 @@
 // @ts-expect-error WebSocket is not defined in the global scope
 import WebSocket from 'ws';
+import { getLogger } from 'log4js';
 import { sendSavedReaction, SignalRpcMessageSource } from './signal';
 import { SignalMessage } from './message';
 import { Commands } from './commands';
@@ -9,7 +10,8 @@ import { registerPortainerCommands } from './commands/portainer';
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 global.WebSocket = WebSocket;
 
-console.warn('Hello World!');
+export const logger = getLogger('🤖');
+logger.level = process.env['LOG_LEVEL'] || 'info';
 
 export const UPDATE_REQUEST_MESSAGE = '/app/data/update-request-message.json';
 
@@ -22,7 +24,7 @@ if (import.meta.url === process.argv[1] || import.meta.url === `file://${process
   const portainerAPIKey = process.env.PORTAINER_API_KEY;
 
   if (portainerURL === undefined || portainerAPIKey === undefined) {
-    console.warn('Portainer URL or API key not set. Skipping Portainer integration.');
+    logger.warn('Portainer URL or API key not set. Skipping Portainer integration.');
   } else {
     const portainer = new Portainer(portainerURL, portainerAPIKey);
     registerPortainerCommands(commands, portainer);
@@ -38,5 +40,5 @@ if (import.meta.url === process.argv[1] || import.meta.url === `file://${process
   // If reaction was prepared, send it
   void sendSavedReaction(UPDATE_REQUEST_MESSAGE);
 
-  console.info('Bot started.');
+  logger.info('Bot started.');
 }

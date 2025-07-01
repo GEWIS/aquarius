@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import { SignalClient } from 'signal-rest-ts';
 import axios from 'axios';
 import { MessageContext, MessageSource, SignalMessage } from './message';
+import { logger } from './index';
 
 export class SignalRpcMessageSource implements MessageSource {
   private readonly apiUrl: string;
@@ -18,7 +19,7 @@ export class SignalRpcMessageSource implements MessageSource {
     if (!this.signalClient) return;
     const groups = await this.signalClient.group().getGroups(account);
     this.groupsCache = groups.map((g) => ({ internal_id: g.internal_id, id: g.id }));
-    console.info(
+    logger.debug(
       'Groups cached:',
       this.groupsCache.map((g) => ({ id: g.id, internal_id: g.internal_id })),
     );
@@ -33,7 +34,7 @@ export class SignalRpcMessageSource implements MessageSource {
     this.signalClient = new SignalClient(this.apiUrl);
 
     const accounts = await this.signalClient.account().getAccounts();
-    console.info('Accounts from REST API:', accounts);
+    logger.debug('Accounts from REST API:', accounts);
 
     for (const account of accounts) {
       await this.loadGroups(account);
@@ -84,7 +85,7 @@ export async function reply(ctx: SignalMessage, message: string) {
         recipients: [ctx.group],
         text_mode: 'styled',
       })
-      .catch((e) => console.error(e));
+      .catch((e) => logger.error(e));
   } else {
     await ctx.reply(message);
   }
@@ -105,7 +106,7 @@ export async function react(account: string, reaction: Reaction) {
         'Content-Type': 'application/json',
       },
     })
-    .catch((e) => console.error(e));
+    .catch((e) => logger.error(e));
 }
 
 /**
