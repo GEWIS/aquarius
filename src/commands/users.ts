@@ -87,7 +87,7 @@ export function registerUserCommands(commands: Commands, users: Users) {
   };
 
   commands.register(
-    'list',
+    'trusted',
     async (ctx: SignalMessage) => {
       const list = users.listTrusted();
       await reply(ctx, `Trusted:\n${list || '(none)'}`);
