@@ -90,6 +90,13 @@ export function registerUserCommands(commands: Commands, users: Users) {
     }
   };
 
+  const teamNamesMap: { [key:number]: string } = {
+    [TEAMS.GUEST]: 'Guest',
+    [TEAMS.ABC]: 'ABC',
+    [TEAMS.CBC]: 'CBC',
+  };
+
+
   commands.register({
     description: {
       name: 'trusted',
@@ -101,7 +108,11 @@ export function registerUserCommands(commands: Commands, users: Users) {
 
       const getTeams = (u: StoredUser) => {
         if (!u.teams) return '';
-        return Array.from(u.teams.values()).join(', ');
+
+        // Convert the team identifiers to their names using the map
+        return Array.from(u.teams.values())
+            .map((teamId) => teamNamesMap[teamId] || `Unknown Team (${teamId})`)
+            .join(', ');
       };
 
       const list = trusted.map((u) => `${u.name}) [${getTeams(u)}] ${u.sudosId ? ` → ${u.sudosId}` : ''}`).join('\n');
