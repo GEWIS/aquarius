@@ -1,4 +1,4 @@
-import { reply } from '../signal';
+import {emoji, reply} from '../signal';
 import { SignalMessage } from '../message';
 import { logger } from '../index';
 import { env } from '../env';
@@ -89,4 +89,29 @@ export async function version(ctx: SignalMessage, args: string[]): Promise<void>
     await reply(ctx, 'Could not fetch the latest version.');
     console.error('Error comparing versions:', error);
   }
+}
+
+export async function logLevel(ctx: SignalMessage, args: string[]): Promise<void> {
+  const level = args[0].toLowerCase();
+  switch (level) {
+    case 'trace':
+      logger.level = 'trace';
+      break;
+    case 'debug':
+      logger.level = 'debug';
+      break;
+    case 'info':
+      logger.level = 'info';
+      break;
+    case 'warn':
+      logger.level = 'warn';
+      break;
+    case 'error':
+      logger.level = 'error';
+      break;
+    default:
+      await reply(ctx, 'Invalid log level. Valid levels: debug, info, warn, error, trace');
+      return;
+  }
+  await emoji(ctx, '✅');
 }

@@ -3,7 +3,7 @@ import { SignalMessage } from '../message';
 import { emoji, reply } from '../signal';
 import { TrustedNumbers } from '../trusted';
 import { logger } from '../index';
-import { help, ping, version } from './general';
+import {help, logLevel, ping, version} from './general';
 
 export type CommandHandler = (ctx: SignalMessage, args: string[]) => Promise<void>;
 
@@ -23,6 +23,12 @@ export class Commands {
       description: 'Send a ping to the bot',
       args: [],
       name: 'ping',
+    });
+
+    this.register('log-level', logLevel, {
+      description: 'Set the log level',
+      args: [{ name: 'level', required: true, description: 'Log level (trace, debug, info, warn, error)' }],
+      name: 'log-level',
     });
 
     this.register('version', version, {
