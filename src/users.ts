@@ -5,7 +5,7 @@ import { emoji, reply } from './signal';
 import { env } from './env';
 import { logger } from './index';
 
-interface StoredUser {
+export interface StoredUser {
   uuid: string;
   name: string;
   number: string;
@@ -55,11 +55,8 @@ export class Users {
     return this.users.get(uuid);
   }
 
-  listTrusted(): string {
-    return [...this.users.values()]
-      .filter((u) => u.trusted)
-      .map((u) => `${u.uuid} (${u.name} / ${u.number})${u.sudosId ? ` → ${u.sudosId}` : ''}`)
-      .join('\n');
+  trusted(): StoredUser[] {
+    return [...this.users.values()].filter((u) => u.trusted);
   }
 
   async registerUser(ctx: SignalMessage) {

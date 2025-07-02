@@ -2,30 +2,33 @@ import {
   ContainerWithProductsResponse,
   PointOfSaleWithContainersResponse,
   ProductResponse,
+  UserResponse,
 } from '@sudosos/sudosos-client';
 import { SudoSOS } from '../sudosos';
 import { emoji, reply } from '../signal';
 import { SignalMessage } from '../message';
 import { logger } from '../index';
 import { Users } from '../users';
-import { Commands } from './index';
+import { CommandContext, CommandHandler, Commands } from './index';
 
-export function withExpandedArgs(
-  users: Users,
-  handler: (ctx: SignalMessage, args: string[], callerId: number | null) => Promise<void>,
-) {
-  return async (ctx: SignalMessage) => {
+ 
+export function withExpandedArgs(users: Users, handler: CommandHandler): CommandHandler {
+  return async (ctx: CommandContext) => {
     const args = parseArgsWithMentions(ctx, users);
-    const callerId = users.getUser(ctx.rawMessage.envelope.sourceUuid)?.sudosId ?? null;
+    const user = users.getUser(ctx.msg.rawMessage.envelope.sourceUuid);
 
-    logger.debug('Expanded args:', args, 'Caller ID:', callerId);
-    await handler(ctx, args, callerId);
+    logger.debug('Expanded args:', args, 'Caller ID:', ctx.msg.rawMessage.envelope.sourceUuid);
+    await handler({
+      ...ctx,
+      args,
+      user: user,
+    });
   };
 }
 
-export function parseArgsWithMentions(ctx: SignalMessage, users: Users): string[] {
-  let message = ctx.rawMessage.envelope.dataMessage.message;
-  const mentions = ctx.rawMessage.envelope.dataMessage.mentions ?? [];
+export function parseArgsWithMentions(ctx: CommandContext, users: Users): string[] {
+  let message = ctx.msg.rawMessage.envelope.dataMessage.message;
+  const mentions = ctx.msg.rawMessage.envelope.dataMessage.mentions ?? [];
 
   // Replace mentions (skip bot)
   const sorted = [...mentions].sort((a, b) => b.start - a.start);
@@ -49,63 +52,45 @@ export function parseArgsWithMentions(ctx: SignalMessage, users: Users): string[
 }
 
 export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, users: Users) {
-  commands.register(
-    'sudosos',
-    async (ctx) => {
-      const status = await sudosos.getStatus();
-      const emoji = status.maintenanceMode ? '🚫' : '✅';
-      await reply(
-        ctx,
-        `[${emoji}] **SudoSOS**\n ${status.maintenanceMode ? 'Maintenance mode enabled' : 'Maintenance mode disabled'}`,
-      );
-    },
-    {
+  commands.register({
+    description: {
       name: 'sudosos',
       args: [],
       description: 'Show SudoSOS status',
     },
-  );
-
-  commands.register(
-    'maintenance',
-    async (ctx, args) => {
-      await emoji(ctx, '🔄');
-      const enable = args[0].toLowerCase() === 'true';
-
+    handler: async (ctx: CommandContext) => {
       const status = await sudosos.getStatus();
-      if (status.maintenanceMode === enable) {
-        await emoji(ctx, '✅');
-        return;
-      }
-
-      await sudosos.setMaintenanceMode(enable);
-      await emoji(ctx, '✅');
+      const emoji = status.maintenanceMode ? '🚫' : '✅';
+      await reply(
+        ctx.msg,
+        `[${emoji}] **SudoSOS**\n ${status.maintenanceMode ? 'Maintenance mode enabled' : 'Maintenance mode disabled'}`,
+      );
     },
-    {
+  });
+
+  commands.register({
+    description: {
       name: 'maintenance',
       args: [{ name: 'enable', required: true, description: 'Enable maintenance mode' }],
       description: 'Toggle SudoSOS maintenance mode',
     },
-  );
+    handler: async (ctx: CommandContext) => {
+      await emoji(ctx.msg, '🔄');
+      const enable = ctx.args[0].toLowerCase() === 'true';
 
-  commands.register(
-    'sudosos-pos-list',
-    async (ctx, args) => {
-      const [take, skip] = args.map((s) => parseInt(s));
-      if (isNaN(take) || isNaN(skip)) {
-        await reply(
-          ctx,
-          `Invalid arguments: ${args.map((a) => a.toString()).join(' ')}.\n Usage: sudosos-pos-list [take] [skip]`,
-        );
+      const status = await sudosos.getStatus();
+      if (status.maintenanceMode === enable) {
+        await emoji(ctx.msg, '✅');
         return;
       }
 
-      const { _pagination, records } = await sudosos.getPos(take, skip);
-      const msg = records.map((p) => `• *${p.name}* (${p.id})`).join('\n');
-      // const msg = pos.data.map((p) => `• ${p.name} (${p.id})`).join('\n');
-      await reply(ctx, `Points of sale (${_pagination.skip}, ${_pagination.take}/${_pagination.count}}):\n${msg}`);
+      await sudosos.setMaintenanceMode(enable);
+      await emoji(ctx.msg, '✅');
     },
-    {
+  });
+
+  commands.register({
+    description: {
       name: 'sudosos-pos-list',
       args: [
         { name: 'take', required: false, description: 'Number of records to take' },
@@ -113,14 +98,33 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
       ],
       description: 'List all Points of sale',
     },
-  );
+    handler: async (ctx: CommandContext) => {
+      const [take, skip] = ctx.args.map((s) => parseInt(s));
+      if (isNaN(take) || isNaN(skip)) {
+        await reply(
+          ctx.msg,
+          `Invalid arguments: ${ctx.args.map((a) => a.toString()).join(' ')}.\n Usage: sudosos-pos-list [take] [skip]`,
+        );
+        return;
+      }
 
-  commands.register(
-    'sudosos-pos',
-    async (ctx, args) => {
-      const id = parseInt(args[0]);
+      const { _pagination, records } = await sudosos.getPos(take, skip);
+      const msg = records.map((p) => `• *${p.name}* (${p.id})`).join('\n');
+      // const msg = pos.data.map((p) => `• ${p.name} (${p.id})`).join('\n');
+      await reply(ctx.msg, `Points of sale (${_pagination.skip}, ${_pagination.take}/${_pagination.count}}):\n${msg}`);
+    },
+  });
+
+  commands.register({
+    description: {
+      name: 'sudosos-pos',
+      args: [{ name: 'id', required: true, description: 'Point of sale ID' }],
+      description: 'Get Point of sale details',
+    },
+    handler: async (ctx: CommandContext) => {
+      const id = parseInt(ctx.args[0]);
       if (isNaN(id)) {
-        await reply(ctx, 'Invalid arguments. Usage: sudosos-pos [id]');
+        await reply(ctx.msg, 'Invalid arguments. Usage: sudosos-pos [id]');
         return;
       }
 
@@ -137,18 +141,12 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
       }
 
       const msg = products.map((p) => `• *${p.name}* (${p.id})`).join('\n');
-
-      await reply(ctx, `Point of sale ${pos.name} (${pos.id}):\n${msg}`);
+      await reply(ctx.msg, `Point of sale ${pos.name} (${pos.id}):\n${msg}`);
     },
-    {
-      name: 'sudosos-pos',
-      args: [{ name: 'id', required: true, description: 'Point of sale ID' }],
-      description: 'Get Point of sale details',
-    },
-  );
+  });
 
   async function buyProduct(
-    ctx: SignalMessage,
+    msg: SignalMessage,
     pos: PointOfSaleWithContainersResponse,
     productId: number,
     userId: number,
@@ -156,8 +154,8 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
   ) {
     const user = await sudosos.getUserById(userId);
     if (!user) {
-      await emoji(ctx, '❌');
-      await reply(ctx, `User ${userId} not found`);
+      await emoji(msg, '❌');
+      await reply(msg, `User ${userId} not found`);
       return;
     }
 
@@ -175,8 +173,8 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
     }
 
     if (!p) {
-      await emoji(ctx, '❌');
-      await reply(ctx, `Product ${productId} not found`);
+      await emoji(msg, '❌');
+      await reply(msg, `Product ${productId} not found`);
       return;
     }
 
@@ -190,9 +188,9 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
     );
 
     const amount = times !== 1 ? times : 'a';
-    await emoji(ctx, '🍺');
+    await emoji(msg, '🍺');
     await reply(
-      ctx,
+      msg,
       `[🍺] Bought ${amount} *${p.p.name}* for ${user.firstName} (${user.id}), total price: €${t.totalPriceInclVat.amount / 100}`,
     );
   }
@@ -202,45 +200,49 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
   const PRODUCTS_METER = 80;
   const PRODUCTS_AQUARIUS = 244;
 
-  commands.register(
-    'lint-fix',
-    withExpandedArgs(users, async (ctx, args, callerId) => {
-      await emoji(ctx, '🔄');
-      const userId = args[0] ? parseInt(args[0]) : callerId;
+  async function getUser(ctx: CommandContext, arg: string): Promise<UserResponse | null> {
+    const parsed = parseInt(arg);
+    if (!isNaN(parsed)) {
+      return await sudosos.getUserById(parsed).catch(() => null);
+    }
 
-      if (userId == null || isNaN(userId)) {
-        await emoji(ctx, '❌');
-        await reply(ctx, `Missing or invalid user ID.\nUsage: lint-fix [userId]`);
-        return;
-      }
+    const callerId = users.getUser(ctx.msg.rawMessage.envelope.sourceUuid)?.sudosId ?? null;
+    if (!callerId) return null;
 
-      const pos = await sudosos.getPosById(1);
-      await buyProduct(ctx, pos, PRODUCTS_GRIMBERGEN, userId);
-    }),
-    {
+    const user = await sudosos.getUserById(callerId).catch(() => null);
+    if (!user) return null;
+
+    return user;
+  }
+
+  const buy = async (ctx: CommandContext, productId: number, posId: number, userArg?: number, amountArg?: number) => {
+    await emoji(ctx.msg, '🔄');
+    const amount = amountArg !== undefined? parseInt(ctx.args[amountArg]) : 1;
+    const arg = userArg !== undefined ? ctx.args[userArg] : '';
+    const user = await getUser(ctx, arg);
+    if (!user) {
+      await emoji(ctx.msg, '❌');
+      await reply(ctx.msg, `Missing or invalid user ID.\nUsage: lint-fix [userId]`);
+      return;
+    }
+
+    const pos = await sudosos.getPosById(posId);
+    await buyProduct(ctx.msg, pos, productId, user.id, amount);
+  };
+
+  commands.register({
+    description: {
       name: 'lint-fix',
       args: [{ name: 'userId', required: false, description: 'User ID (optional if linked)' }],
       description: 'Buys a *Grimbergen Tripel* for the user',
     },
-  );
-
-  commands.register(
-    'classic',
-    withExpandedArgs(users, async (ctx, args, callerId) => {
-      await emoji(ctx, '🔄');
-      const amount = parseInt(args[0]);
-      const userId = args[1] ? parseInt(args[1]) : callerId;
-
-      if (isNaN(amount) || userId == null || isNaN(userId)) {
-        await emoji(ctx, '❌');
-        await reply(ctx, `Usage: classic [amount] [userId]`);
-        return;
-      }
-
-      const pos = await sudosos.getPosById(1);
-      await buyProduct(ctx, pos, PRODUCTS_VIPER, userId, amount);
+    handler: withExpandedArgs(users, async (ctx: CommandContext) => {
+      await buy(ctx, PRODUCTS_GRIMBERGEN, 1, 0);
     }),
-    {
+  });
+
+  commands.register({
+    description: {
       name: 'classic',
       args: [
         { name: 'amount', required: true, description: 'Amount to buy' },
@@ -248,76 +250,50 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
       ],
       description: 'Buys a *Classic* for the user',
     },
-  );
-
-  commands.register(
-    'meter',
-    withExpandedArgs(users, async (ctx, args, callerId) => {
-      await emoji(ctx, '🔄');
-      const userId = args[0] ? parseInt(args[0]) : callerId;
-
-      if (userId == null || isNaN(userId)) {
-        await emoji(ctx, '❌');
-        await reply(ctx, `Usage: meter [userId]`);
-        return;
-      }
-
-      const pos = await sudosos.getPosById(2);
-      await buyProduct(ctx, pos, PRODUCTS_METER, userId, 1);
+    handler: withExpandedArgs(users, async (ctx: CommandContext) => {
+      await buy(ctx, PRODUCTS_VIPER, 1, 1, 0);
     }),
-    {
+  });
+
+  commands.register({
+    description: {
       name: 'meter',
       args: [{ name: 'userId', required: false, description: 'User ID (optional if linked)' }],
       description: 'Zo kom je een *meter* verder',
     },
-  );
-
-  commands.register(
-    'brak',
-    withExpandedArgs(users, async (ctx, args, callerId) => {
-      await emoji(ctx, '🔄');
-      const userId = args[0] ? parseInt(args[0]) : callerId;
-
-      if (userId == null || isNaN(userId)) {
-        await emoji(ctx, '❌');
-        await reply(ctx, `Usage: brak [userId]`);
-        return;
-      }
-
-      const pos = await sudosos.getPosById(1);
-      await buyProduct(ctx, pos, PRODUCTS_AQUARIUS, userId, 1);
+    handler: withExpandedArgs(users, async (ctx: CommandContext) => {
+      await buy(ctx, PRODUCTS_METER, 2, 0);
     }),
-    {
+  });
+
+  commands.register({
+    description: {
       name: 'brak',
       args: [{ name: 'userId', required: false, description: 'User ID (optional if linked)' }],
       description: '**Auw**',
     },
-  );
-
-  commands.register(
-    'balance',
-    withExpandedArgs(users, async (ctx, args, callerId) => {
-      if (!callerId || isNaN(callerId)) {
-        await emoji(ctx, '❌');
-        await reply(ctx, `Please link your Signal UUID to a SudoSOS user ID.\nsee *help link*`);
-        return;
-      }
-
-      const user = await sudosos.getUserById(callerId);
-      if (!user) {
-        await emoji(ctx, '❌');
-        await reply(ctx, `User ${callerId} not found`);
-        return;
-      }
-
-      const balance = await sudosos.getBalance(callerId);
-      await emoji(ctx, '💰');
-      await reply(ctx, `[💰] ${user.firstName} (${callerId}) has €${balance.amount.amount / 100}`);
+    handler: withExpandedArgs(users, async (ctx: CommandContext) => {
+      await buy(ctx, PRODUCTS_AQUARIUS, 1, 0);
     }),
-    {
+  });
+
+  commands.register({
+    description: {
       name: 'balance',
       args: [],
       description: 'Show your own balance',
     },
-  );
+    handler: withExpandedArgs(users, async (ctx: CommandContext) => {
+      const user = await getUser(ctx, ctx.args[0]);
+      if (!user) {
+        await emoji(ctx.msg, '❌');
+        await reply(ctx.msg, `Missing or invalid user ID.\nUsage: lint-fix [userId]`);
+        return;
+      }
+
+      const balance = await sudosos.getBalance(user.id);
+      await emoji(ctx.msg, '💰');
+      await reply(ctx.msg, `[💰] ${user.firstName} (${user.id}) has €${balance.amount.amount / 100}`);
+    }),
+  });
 }

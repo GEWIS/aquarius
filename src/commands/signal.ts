@@ -1,19 +1,20 @@
-import { SignalMessage } from '../message';
 import { reply, SignalRpcMessageSource } from '../signal';
-import { CommandHandler, Commands } from './index';
+import { CommandContext, CommandHandler, Commands } from './index';
 
 const reloadGroups =
   (source: SignalRpcMessageSource): CommandHandler =>
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async (ctx: SignalMessage, args: string[]) => {
-    await source.loadGroups(ctx.account);
-    await reply(ctx, 'Groups reloaded.');
+  async (ctx: CommandContext) => {
+    await source.loadGroups(ctx.msg.account);
+    await reply(ctx.msg, 'Groups reloaded.');
   };
 
 export function registerCommands(commands: Commands, source: SignalRpcMessageSource) {
-  commands.register('reload', reloadGroups(source), {
-    name: 'reload',
-    args: [],
-    description: 'Reload groups from Signal API',
+  commands.register({
+    description: {
+      name: 'reload-groups',
+      args: [],
+      description: 'Reload groups',
+    },
+    handler: reloadGroups(source),
   });
 }

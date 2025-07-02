@@ -1,33 +1,37 @@
 import { emoji, reply } from '../signal';
-import { SignalMessage } from '../message';
 import { logger } from '../index';
 import { env } from '../env';
-import { CommandDescription, CommandHandler } from './index';
+import { CommandContext, CommandHandler, Commands } from './index';
 
-export function ping(ctx: SignalMessage, args: string[]): Promise<void> {
-  return reply(ctx, `Pong! [${args.join(' ')}]`);
+export function ping(ctx: CommandContext): Promise<void> {
+  return reply(ctx.msg, `Pong! [${ctx.args.join(' ')}]`);
 }
 
-export function help(commands: Map<string, { description: CommandDescription }>): CommandHandler {
-  return async (ctx, args) => {
+export function help(commands: Commands): CommandHandler {
+  return async (ctx: CommandContext) => {
+    const { args } = ctx;
     if (args.length === 0) {
       // List all commands
       let message = 'Available commands:\n';
-      for (const { description } of commands.values()) {
+      for (const { description } of commands.commands.values()) {
         message += `\n• **${description.name}** — ${description.description || 'No description'}`;
       }
-      await reply(ctx, message);
+      await reply(ctx.msg, message);
     } else {
       // Show help for one command
       const cmdName = args[0].toLowerCase();
-      const command = commands.get(cmdName);
+      const command = commands.commands.get(cmdName);
       if (!command) {
-        await reply(ctx, `Command "${cmdName}" not found.`);
+        await reply(ctx.msg, `Command "${cmdName}" not found.`);
         return;
       }
 
       const { description } = command;
       let message = `**${description.name}**\n`;
+
+      const aliases = description.aliases ? description.aliases.join(', ') : '';
+      message += aliases ? `*${aliases}\n\n*` : '';
+
       message += description.description ? description.description + '\n' : '';
       if (description.args.length > 0) {
         message += 'Usage: ' + description.name + ' ';
@@ -39,7 +43,7 @@ export function help(commands: Map<string, { description: CommandDescription }>)
       } else {
         message += 'No arguments.';
       }
-      await reply(ctx, message);
+      await reply(ctx.msg, message);
     }
   };
 }
@@ -70,29 +74,28 @@ export function isLatest(version: string): boolean {
   return version === versionTag;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function version(ctx: SignalMessage, args: string[]): Promise<void> {
+export async function version(ctx: CommandContext): Promise<void> {
   const { DOCKER_VERSION, GIT_COMMIT_SHA, REPOSITORY } = env;
 
   try {
     const latestVersion = await fetchLatestVersion(REPOSITORY);
     if (isLatest(latestVersion)) {
-      await reply(ctx, `[✅] Current Version: ${DOCKER_VERSION} (${GIT_COMMIT_SHA})`);
+      await reply(ctx.msg, `[✅] Current Version: ${DOCKER_VERSION} (${GIT_COMMIT_SHA})`);
       return;
     } else if (latestVersion === 'unknown') {
-      await reply(ctx, `[❔] Current Version: ${DOCKER_VERSION} (${GIT_COMMIT_SHA}), Latest Version: unknown`);
+      await reply(ctx.msg, `[❔] Current Version: ${DOCKER_VERSION} (${GIT_COMMIT_SHA}), Latest Version: unknown`);
     } else {
       const message = `[❌] Current Version: ${DOCKER_VERSION} (${GIT_COMMIT_SHA}), Latest Version: ${latestVersion}`;
-      await reply(ctx, message);
+      await reply(ctx.msg, message);
     }
   } catch (error) {
-    await reply(ctx, 'Could not fetch the latest version.');
+    await reply(ctx.msg, 'Could not fetch the latest version.');
     console.error('Error comparing versions:', error);
   }
 }
 
-export async function logLevel(ctx: SignalMessage, args: string[]): Promise<void> {
-  const level = args[0].toLowerCase();
+export async function logLevel(ctx: CommandContext): Promise<void> {
+  const level = ctx.args[0].toLowerCase();
   switch (level) {
     case 'trace':
       logger.level = 'trace';
@@ -110,8 +113,57 @@ export async function logLevel(ctx: SignalMessage, args: string[]): Promise<void
       logger.level = 'error';
       break;
     default:
-      await reply(ctx, 'Invalid log level. Valid levels: debug, info, warn, error, trace');
+      await reply(ctx.msg, 'Invalid log level. Valid levels: debug, info, warn, error, trace');
       return;
   }
-  await emoji(ctx, '✅');
+  await emoji(ctx.msg, '✅');
+}
+
+export function registerGeneral(commands: Commands) {
+  commands.register({
+    description: {
+      name: 'ping',
+      args: [],
+      description: 'Send a ping to the bot',
+      aliases: ['p'],
+    },
+    handler: ping,
+    registered: true,
+  });
+
+  commands.register({
+    description: {
+      name: 'log-level',
+      args: [{ name: 'level', required: true, description: 'Log level (trace, debug, info, warn, error)' }],
+      description: 'Set the log level',
+      aliases: ['ll'],
+    },
+    handler: logLevel,
+    registered: true,
+  });
+
+  commands.register({
+    description: {
+      name: 'version',
+      args: [],
+      description: 'Show version',
+      aliases: ['v'],
+    },
+    handler: version,
+    registered: true,
+  });
+
+  commands.register({
+    description: {
+      name: 'help',
+      args: [{ name: 'command', required: false, description: 'Command to get detailed help for' }],
+      description: 'Show help for commands',
+      aliases: ['h'],
+    },
+    handler: async (ctx: CommandContext) => {
+      const h = help(commands);
+      await h(ctx);
+    },
+    registered: true,
+  });
 }

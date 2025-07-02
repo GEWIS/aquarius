@@ -1,58 +1,59 @@
-import { Commands } from '../commands';
+import { CommandContext, Commands } from '../commands';
 import { Users } from '../users';
 import { SignalMessage } from '../message';
 import { emoji, reply } from '../signal';
 import { logger } from '../index';
 
 export function registerUserCommands(commands: Commands, users: Users) {
-  commands.register(
-    'register',
-    async (ctx: SignalMessage) => {
-      await users.registerUser(ctx);
-    },
-    {
+  commands.register({
+    description: {
       name: 'register',
       args: [],
       description: 'Register yourself as a known user',
-      open: true,
     },
-  );
+    handler: async (ctx: CommandContext) => {
+      await users.registerUser(ctx.msg);
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    policy: async (ctx: CommandContext) => {
+      return Promise.resolve(true);
+    },
+    registered: false,
+  });
 
-  commands.register(
-    'trust',
-    async (ctx: SignalMessage) => {
-      const mentions = ctx.rawMessage.envelope.dataMessage.mentions ?? [];
+  commands.register({
+    description: {
+      name: 'trust',
+      args: [{ name: 'mention(s)', required: true, description: 'Mentioned user(s) to trust' }],
+      description: 'Trust mentioned registered users',
+    },
+    handler: async (ctx: CommandContext) => {
+      const mentions = ctx.msg.rawMessage.envelope.dataMessage.mentions ?? [];
       for (const mention of mentions) {
         if (mention.start !== 0 && users.getUser(mention.uuid)) {
           await users.trust(mention.uuid);
         }
       }
-      await emoji(ctx, '✅');
+      await emoji(ctx.msg, '✅');
     },
-    {
-      name: 'trust',
-      args: [{ name: 'mention(s)', required: true, description: 'Mentioned user(s) to trust' }],
-      description: 'Trust mentioned registered users',
-    },
-  );
+  });
 
-  commands.register(
-    'untrust',
-    async (ctx: SignalMessage) => {
-      const mentions = ctx.rawMessage.envelope.dataMessage.mentions ?? [];
+  commands.register({
+    description: {
+      name: 'untrust',
+      args: [{ name: 'mention(s)', required: true, description: 'Mentioned user(s) to untrust' }],
+      description: 'Untrust mentioned registered users',
+    },
+    handler: async (ctx: CommandContext) => {
+      const mentions = ctx.msg.rawMessage.envelope.dataMessage.mentions ?? [];
       for (const mention of mentions) {
         if (mention.start !== 0 && users.getUser(mention.uuid)) {
           await users.untrust(mention.uuid);
         }
       }
-      await emoji(ctx, '✅');
+      await emoji(ctx.msg, '✅');
     },
-    {
-      name: 'untrust',
-      args: [{ name: 'mention(s)', required: true, description: 'Mentioned user(s) to untrust' }],
-      description: 'Untrust mentioned registered users',
-    },
-  );
+  });
 
   const linkCommand = async (ctx: SignalMessage, cb: (uuid: string, userId: number) => Promise<void>) => {
     try {
@@ -86,67 +87,61 @@ export function registerUserCommands(commands: Commands, users: Users) {
     }
   };
 
-  commands.register(
-    'trusted',
-    async (ctx: SignalMessage) => {
-      const list = users.listTrusted();
-      await reply(ctx, `Trusted:\n${list || '(none)'}`);
-    },
-    {
-      name: 'linked',
+  commands.register({
+    description: {
+      name: 'trusted',
       args: [],
       description: 'List all trusted registered users',
     },
-  );
-
-  commands.register(
-    'link',
-    async (c: SignalMessage) => {
-      await linkCommand(c, async (uuid, userId) => {
-        await users.link(uuid, userId);
-      });
+    handler: async (ctx: CommandContext) => {
+      const trusted = users.trusted();
+      const list = trusted.map((u) => `${u.name})${u.sudosId ? ` → ${u.sudosId}` : ''}`).join('\n');
+      await reply(ctx.msg, `Trusted:\n${list || '(none)'}`);
     },
-    {
+  });
+
+  commands.register({
+    description: {
       name: 'link',
       args: [{ name: 'mention', required: true, description: 'Mentioned user to link' }],
       description: 'Link mentioned Signal UUID to a SudoSOS user ID',
-      open: true,
     },
-  );
+    handler: async (ctx: CommandContext) => {
+      await linkCommand(ctx.msg, async (uuid, userId) => {
+        await users.link(uuid, userId);
+      });
+    },
+  });
 
-  commands.register(
-    'self-link',
-    async (c: SignalMessage, args: string[]) => {
-      const userId = parseInt(args[0]);
-      if (!userId || isNaN(userId)) {
-        await reply(c, 'Missing or invalid SudoSOS user ID.');
-        return;
-      }
-      const uuid = c.rawMessage.envelope.sourceUuid;
-      await users.link(uuid, userId);
-      await emoji(c, '✅');
-    },
-    {
+  commands.register({
+    description: {
       name: 'self-link',
       args: [{ name: 'userId', required: true, description: 'SudoSOS user ID' }],
       description: 'Link your own Signal UUID to a SudoSOS user ID',
-      open: true,
     },
-  );
+    handler: async (ctx: CommandContext) => {
+      const userId = parseInt(ctx.args[0]);
+      if (!userId || isNaN(userId)) {
+        await reply(ctx.msg, 'Missing or invalid SudoSOS user ID.');
+        return;
+      }
+      const uuid = ctx.msg.rawMessage.envelope.sourceUuid;
+      await users.link(uuid, userId);
+      await emoji(ctx.msg, '✅');
+    },
+  });
 
-  commands.register(
-    'unlink',
-    async (c: SignalMessage) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      await linkCommand(c, async (uuid, userId) => {
-        await users.unlink(uuid);
-      });
-    },
-    {
+  commands.register({
+    description: {
       name: 'unlink',
       args: [{ name: 'mention', required: true, description: 'Mentioned user to unlink' }],
       description: 'Unlink mentioned Signal UUID from SudoSOS user ID',
-      open: true,
     },
-  );
+    handler: async (ctx: CommandContext) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      await linkCommand(ctx.msg, async (uuid, userId) => {
+        await users.unlink(uuid);
+      });
+    },
+  });
 }
