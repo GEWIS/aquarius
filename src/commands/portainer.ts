@@ -190,7 +190,7 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
 
       const status = await portainer.getImageStatus(stack);
       if (status === 'updated') {
-        await emoji(ctx, '✅');
+        await emoji(ctx, '➖');
         return;
       }
 
