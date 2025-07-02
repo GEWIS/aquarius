@@ -115,7 +115,7 @@ export function registerUserCommands(commands: Commands, users: Users) {
             .join(', ');
       };
 
-      const list = trusted.map((u) => `${u.name}) [${getTeams(u)}] ${u.sudosId ? ` → ${u.sudosId}` : ''}`).join('\n');
+      const list = trusted.map((u) => `${u.name} [${getTeams(u)}] ${u.sudosId ? ` → ${u.sudosId}` : ''}`).join('\n');
       await reply(ctx.msg, `Trusted:\n${list || '(none)'}`);
     },
     policy: isAdmin,
