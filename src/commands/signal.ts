@@ -1,4 +1,5 @@
 import { reply, SignalRpcMessageSource } from '../signal';
+import { isAdmin } from './policy';
 import { CommandContext, CommandHandler, Commands } from './index';
 
 const reloadGroups =
@@ -16,5 +17,6 @@ export function registerCommands(commands: Commands, source: SignalRpcMessageSou
       description: 'Reload groups',
     },
     handler: reloadGroups(source),
+    policy: isAdmin,
   });
 }

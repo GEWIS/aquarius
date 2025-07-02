@@ -11,6 +11,13 @@ export interface StoredUser {
   number: string;
   trusted: boolean;
   sudosId?: number;
+  teams?: Set<number>;
+}
+
+export enum TEAMS {
+  GUEST = 1,
+  ABC = 2,
+  CBC = 3,
 }
 
 export class Users {
@@ -57,6 +64,39 @@ export class Users {
 
   trusted(): StoredUser[] {
     return [...this.users.values()].filter((u) => u.trusted);
+  }
+
+  teams(uuid: string): Set<number> | undefined {
+    const user = this.users.get(uuid);
+    if (!user) {
+      return undefined;
+    }
+
+    if (!user.teams) {
+      user.teams = new Set();
+      return undefined;
+    }
+
+    return user.teams;
+  }
+
+  removeTeam(uuid: string, team: number) {
+    const user = this.users.get(uuid);
+    if (user) {
+      user.teams?.delete(team);
+      void this.save();
+    }
+  }
+
+  addTeam(uuid: string, team: number) {
+    const user = this.users.get(uuid);
+    if (user) {
+      if (!user.teams) {
+        user.teams = new Set();
+      }
+      user.teams?.add(team);
+      void this.save();
+    }
   }
 
   async registerUser(ctx: SignalMessage) {

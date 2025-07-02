@@ -1,6 +1,7 @@
 import { emoji, reply } from '../signal';
 import { logger } from '../index';
 import { env } from '../env';
+import { isAdmin } from './policy';
 import { CommandContext, CommandHandler, Commands } from './index';
 
 export function ping(ctx: CommandContext): Promise<void> {
@@ -140,6 +141,7 @@ export function registerGeneral(commands: Commands) {
     },
     handler: logLevel,
     registered: true,
+    policy: isAdmin,
   });
 
   commands.register({
@@ -151,6 +153,7 @@ export function registerGeneral(commands: Commands) {
     },
     handler: version,
     registered: true,
+    policy: isAdmin,
   });
 
   commands.register({

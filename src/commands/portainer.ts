@@ -6,6 +6,7 @@ import { Stack } from '../portainer.types';
 import { SignalMessage } from '../message';
 import { logger, UPDATE_REQUEST_MESSAGE } from '../index';
 import { env } from '../env';
+import { isCBC } from './policy';
 
 export function registerPortainerCommands(commands: Commands, portainer: Portainer) {
   const wrap = (fn: CommandHandler): CommandHandler => fn;
@@ -23,6 +24,7 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
       const msg = stacks.map((s) => `• ${s.Name} (stack: ${s.Id})`).join('\n');
       await reply(ctx.msg, `Stacks:\n${msg}`);
     }),
+    policy: isCBC,
   });
 
   commands.register({
@@ -36,6 +38,7 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
       if (!stack) return reply(ctx.msg, 'Stack not found.');
       await reply(ctx.msg, JSON.stringify(stack, null, 2));
     }),
+    policy: isCBC,
   });
 
   commands.register({
@@ -64,6 +67,7 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
       await portainer.stopStack(stack);
       await emoji(ctx.msg, '👍');
     }),
+    policy: isCBC,
   });
 
   commands.register({
@@ -87,6 +91,7 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
       const imgMsg = imgStatus === 'updated' ? 'Images are up to date.' : 'Images are outdated.';
       await reply(ctx.msg, `Stack: ${stack.Name} (stack: ${stack.Id}) ${status}\n${imgMsg}`);
     }),
+    policy: isCBC,
   });
 
   commands.register({
@@ -102,6 +107,7 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
       await portainer.redeployStack(stack);
       await emoji(ctx.msg, '✅');
     }),
+    policy: isCBC,
   });
 
   commands.register({
@@ -126,6 +132,7 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
         }, 1000);
       });
     }),
+    policy: isCBC,
   });
 
   commands.register({
@@ -152,6 +159,7 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
       await reply(ctx.msg, `Stacks with outdated images:\n${msg}`);
       await emoji(ctx.msg, '✅');
     }),
+    policy: isCBC,
   });
 
   const prepareReaction = async (ctx: SignalMessage, reaction: string) => {
@@ -193,5 +201,6 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
       await portainer.redeployStack(stack);
       await emoji(ctx.msg, '✅');
     }),
+    policy: isCBC,
   });
 }

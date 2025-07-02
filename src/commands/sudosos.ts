@@ -9,9 +9,9 @@ import { emoji, reply } from '../signal';
 import { SignalMessage } from '../message';
 import { logger } from '../index';
 import { Users } from '../users';
+import { isABC, isGuest } from './policy';
 import { CommandContext, CommandHandler, Commands } from './index';
 
- 
 export function withExpandedArgs(users: Users, handler: CommandHandler): CommandHandler {
   return async (ctx: CommandContext) => {
     const args = parseArgsWithMentions(ctx, users);
@@ -66,6 +66,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
         `[${emoji}] **SudoSOS**\n ${status.maintenanceMode ? 'Maintenance mode enabled' : 'Maintenance mode disabled'}`,
       );
     },
+    policy: isGuest,
   });
 
   commands.register({
@@ -87,6 +88,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
       await sudosos.setMaintenanceMode(enable);
       await emoji(ctx.msg, '✅');
     },
+    policy: isABC || isABC,
   });
 
   commands.register({
@@ -113,6 +115,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
       // const msg = pos.data.map((p) => `• ${p.name} (${p.id})`).join('\n');
       await reply(ctx.msg, `Points of sale (${_pagination.skip}, ${_pagination.take}/${_pagination.count}}):\n${msg}`);
     },
+    policy: isGuest,
   });
 
   commands.register({
@@ -143,6 +146,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
       const msg = products.map((p) => `• *${p.name}* (${p.id})`).join('\n');
       await reply(ctx.msg, `Point of sale ${pos.name} (${pos.id}):\n${msg}`);
     },
+    policy: isGuest,
   });
 
   async function buyProduct(
@@ -217,7 +221,17 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
 
   const buy = async (ctx: CommandContext, productId: number, posId: number, userArg?: number, amountArg?: number) => {
     await emoji(ctx.msg, '🔄');
-    const amount = amountArg !== undefined? parseInt(ctx.args[amountArg]) : 1;
+
+    let amount = 1;
+    if (amountArg !== undefined) {
+      const fromArg = parseInt(ctx.args[amountArg]);
+      if (isNaN(fromArg)) {
+        await reply(ctx.msg, `Invalid amount: ${ctx.args[amountArg]}`);
+        return;
+      }
+      amount = fromArg;
+    }
+
     const arg = userArg !== undefined ? ctx.args[userArg] : '';
     const user = await getUser(ctx, arg);
     if (!user) {
@@ -239,6 +253,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
     handler: withExpandedArgs(users, async (ctx: CommandContext) => {
       await buy(ctx, PRODUCTS_GRIMBERGEN, 1, 0);
     }),
+    policy: isGuest,
   });
 
   commands.register({
@@ -253,6 +268,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
     handler: withExpandedArgs(users, async (ctx: CommandContext) => {
       await buy(ctx, PRODUCTS_VIPER, 1, 1, 0);
     }),
+    policy: isGuest,
   });
 
   commands.register({
@@ -264,6 +280,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
     handler: withExpandedArgs(users, async (ctx: CommandContext) => {
       await buy(ctx, PRODUCTS_METER, 2, 0);
     }),
+    policy: isGuest,
   });
 
   commands.register({
@@ -275,6 +292,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
     handler: withExpandedArgs(users, async (ctx: CommandContext) => {
       await buy(ctx, PRODUCTS_AQUARIUS, 1, 0);
     }),
+    policy: isGuest,
   });
 
   commands.register({
@@ -295,5 +313,6 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
       await emoji(ctx.msg, '💰');
       await reply(ctx.msg, `[💰] ${user.firstName} (${user.id}) has €${balance.amount.amount / 100}`);
     }),
+    policy: isGuest,
   });
 }

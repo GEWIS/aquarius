@@ -1,8 +1,9 @@
 import { CommandContext, Commands } from '../commands';
-import { Users } from '../users';
+import { StoredUser, TEAMS, Users } from '../users';
 import { SignalMessage } from '../message';
 import { emoji, reply } from '../signal';
 import { logger } from '../index';
+import { isAdmin } from './policy';
 
 export function registerUserCommands(commands: Commands, users: Users) {
   commands.register({
@@ -36,6 +37,7 @@ export function registerUserCommands(commands: Commands, users: Users) {
       }
       await emoji(ctx.msg, '✅');
     },
+    policy: isAdmin,
   });
 
   commands.register({
@@ -53,9 +55,10 @@ export function registerUserCommands(commands: Commands, users: Users) {
       }
       await emoji(ctx.msg, '✅');
     },
+    policy: isAdmin,
   });
 
-  const linkCommand = async (ctx: SignalMessage, cb: (uuid: string, userId: number) => Promise<void>) => {
+  const linkCommand = async (ctx: SignalMessage, cb: (uuid: string, arg: number) => Promise<void>) => {
     try {
       const mentions = ctx.rawMessage.envelope.dataMessage.mentions;
 
@@ -95,9 +98,16 @@ export function registerUserCommands(commands: Commands, users: Users) {
     },
     handler: async (ctx: CommandContext) => {
       const trusted = users.trusted();
-      const list = trusted.map((u) => `${u.name})${u.sudosId ? ` → ${u.sudosId}` : ''}`).join('\n');
+
+      const getTeams = (u: StoredUser) => {
+        if (!u.teams) return '';
+        return Array.from(u.teams.values()).join(', ');
+      };
+
+      const list = trusted.map((u) => `${u.name}) [${getTeams(u)}] ${u.sudosId ? ` → ${u.sudosId}` : ''}`).join('\n');
       await reply(ctx.msg, `Trusted:\n${list || '(none)'}`);
     },
+    policy: isAdmin,
   });
 
   commands.register({
@@ -111,6 +121,7 @@ export function registerUserCommands(commands: Commands, users: Users) {
         await users.link(uuid, userId);
       });
     },
+    policy: isAdmin,
   });
 
   commands.register({
@@ -129,6 +140,7 @@ export function registerUserCommands(commands: Commands, users: Users) {
       await users.link(uuid, userId);
       await emoji(ctx.msg, '✅');
     },
+    policy: isAdmin,
   });
 
   commands.register({
@@ -141,6 +153,55 @@ export function registerUserCommands(commands: Commands, users: Users) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       await linkCommand(ctx.msg, async (uuid, userId) => {
         await users.unlink(uuid);
+      });
+    },
+    policy: isAdmin,
+  });
+
+  commands.register({
+    description: {
+      name: 'team-add',
+      args: [{ name: 'mention', required: true, description: 'Mentioned user to link' }],
+      description: 'Link mentioned Signal UUID to a SudoSOS user ID',
+    },
+    policy: isAdmin,
+    handler: async (ctx: CommandContext) => {
+      await linkCommand(ctx.msg, async (uuid, teamId) => {
+        if (teamId === undefined) {
+          await reply(ctx.msg, 'Missing or invalid team ID.');
+          return;
+        }
+
+        if (!Object.values(TEAMS).includes(teamId)) {
+          await reply(ctx.msg, 'Invalid team ID.');
+          return;
+        }
+
+        users.addTeam(uuid, teamId);
+      });
+    },
+  });
+
+  commands.register({
+    description: {
+      name: 'team-remove',
+      args: [{ name: 'mention', required: true, description: 'Mentioned user to link' }],
+      description: 'Link mentioned Signal UUID to a SudoSOS user ID',
+    },
+    policy: isAdmin,
+    handler: async (ctx: CommandContext) => {
+      await linkCommand(ctx.msg, async (uuid, teamId) => {
+        if (teamId === undefined) {
+          await reply(ctx.msg, 'Missing or invalid team ID.');
+          return;
+        }
+
+        if (!Object.values(TEAMS).includes(teamId)) {
+          await reply(ctx.msg, 'Invalid team ID.');
+          return;
+        }
+
+        users.removeTeam(uuid, teamId);
       });
     },
   });
