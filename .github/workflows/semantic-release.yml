@@ -57,7 +57,7 @@ jobs:
           context: .
           platforms: linux/amd64
           push: false
-          tags: aquarius:build
+          tags: local/aquarius:build
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -67,14 +67,14 @@ jobs:
 
       - name: Tag and push to GHCR
         run: |
-          docker tag aquarius:build ghcr.io/gewis/aquarius:${{ env.DOCKER_VERSION }}
-          docker tag aquarius:build ghcr.io/gewis/aquarius:latest
+          docker tag local/aquarius:build ghcr.io/gewis/aquarius:${{ env.DOCKER_VERSION }}
+          docker tag local/aquarius:build ghcr.io/gewis/aquarius:latest
           docker push ghcr.io/gewis/aquarius:${{ env.DOCKER_VERSION }}
           docker push ghcr.io/gewis/aquarius:latest
 
       - name: Tag and push to Private Nexus
         run: |
-          docker tag aquarius:build abc.docker-registry.gewis.nl/eou/aquarius:${{ env.DOCKER_VERSION }}
-          docker tag aquarius:build abc.docker-registry.gewis.nl/eou/aquarius:latest
+          docker tag local/aquarius:build abc.docker-registry.gewis.nl/eou/aquarius:${{ env.DOCKER_VERSION }}
+          docker tag local/aquarius:build abc.docker-registry.gewis.nl/eou/aquarius:latest
           docker push abc.docker-registry.gewis.nl/eou/aquarius:${{ env.DOCKER_VERSION }}
           docker push abc.docker-registry.gewis.nl/eou/aquarius:latest
