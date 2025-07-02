@@ -6,51 +6,47 @@ import {
 import { SudoSOS } from '../sudosos';
 import { emoji, reply } from '../signal';
 import { SignalMessage } from '../message';
+import { LinkedUsers } from '../links';
+import { logger } from '../index';
 import { Commands } from './index';
-import {LinkedUsers} from "../links";
-import {logger} from "../index";
 
 export function withExpandedArgs(
-    linkedUsers: LinkedUsers,
-    handler: (ctx: SignalMessage, args: string[], callerId: number | null) => Promise<void>
+  linkedUsers: LinkedUsers,
+  handler: (ctx: SignalMessage, args: string[], callerId: number | null) => Promise<void>,
 ) {
-    return async (ctx: SignalMessage) => {
-        const args = parseArgsWithMentions(ctx, linkedUsers);
-        const callerId = linkedUsers.getLinkedUserId(ctx.rawMessage.envelope.sourceUuid) ?? null;
+  return async (ctx: SignalMessage) => {
+    const args = parseArgsWithMentions(ctx, linkedUsers);
+    const callerId = linkedUsers.getLinkedUserId(ctx.rawMessage.envelope.sourceUuid) ?? null;
 
-        logger.debug('Expanded args:', args, 'Caller ID:', callerId);
-        await handler(ctx, args, callerId);
-    };
+    logger.debug('Expanded args:', args, 'Caller ID:', callerId);
+    await handler(ctx, args, callerId);
+  };
 }
-
-
 
 export function parseArgsWithMentions(ctx: SignalMessage, linkedUsers: LinkedUsers): string[] {
-    let message = ctx.rawMessage.envelope.dataMessage.message;
-    const mentions = ctx.rawMessage.envelope.dataMessage.mentions ?? [];
+  let message = ctx.rawMessage.envelope.dataMessage.message;
+  const mentions = ctx.rawMessage.envelope.dataMessage.mentions ?? [];
 
-    // Replace mentions (skip bot)
-    const sorted = [...mentions].sort((a, b) => b.start - a.start);
-    for (const mention of sorted) {
-        const start = mention.start;
-        const end = mention.start + mention.length;
+  // Replace mentions (skip bot)
+  const sorted = [...mentions].sort((a, b) => b.start - a.start);
+  for (const mention of sorted) {
+    const start = mention.start;
+    const end = mention.start + mention.length;
 
-        if (mention.start === 0) {
-            message = message.slice(0, start) + message.slice(end);
-        } else {
-            const userId = linkedUsers.getLinkedUserId(mention.uuid);
-            if (userId != null) {
-                message = message.slice(0, start) + String(userId) + message.slice(end);
-            }
-        }
+    if (mention.start === 0) {
+      message = message.slice(0, start) + message.slice(end);
+    } else {
+      const userId = linkedUsers.getLinkedUserId(mention.uuid);
+      if (userId != null) {
+        message = message.slice(0, start) + String(userId) + message.slice(end);
+      }
     }
+  }
 
-    const tokens = message.trim().split(/\s+/);
-    tokens.shift();
-    return tokens;
+  const tokens = message.trim().split(/\s+/);
+  tokens.shift();
+  return tokens;
 }
-
-
 
 export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, linkedUsers: LinkedUsers) {
   commands.register(
@@ -290,34 +286,30 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, li
     },
   );
 
-    commands.register(
-        'balance',
-        withExpandedArgs(linkedUsers, async (ctx, args, callerId) => {
-            const inputId = args[0] ? parseInt(args[0]) : NaN;
-            const userId = isNaN(inputId) ? callerId : inputId;
+  commands.register(
+    'balance',
+    withExpandedArgs(linkedUsers, async (ctx, args, callerId) => {
+      if (!callerId || isNaN(callerId)) {
+        await emoji(ctx, '❌');
+        await reply(ctx, `Please link your Signal UUID to a SudoSOS user ID.\nsee *help link*`);
+        return;
+      }
 
-            if (userId == null) {
-                await emoji(ctx, '❌');
-                await reply(ctx, `No user ID provided and your Signal UUID is not linked.`);
-                return;
-            }
+      const user = await sudosos.getUserById(callerId);
+      if (!user) {
+        await emoji(ctx, '❌');
+        await reply(ctx, `User ${callerId} not found`);
+        return;
+      }
 
-            const user = await sudosos.getUserById(userId);
-            if (!user) {
-                await emoji(ctx, '❌');
-                await reply(ctx, `User ${userId} not found`);
-                return;
-            }
-
-            const balance = await sudosos.getBalance(userId);
-            await emoji(ctx, '💰');
-            await reply(ctx, `[💰] ${user.firstName} (${userId}) has €${balance.amount.amount / 100}`);
-        }),
-        {
-            name: 'balance',
-            args: [{ name: 'userId', required: false, description: 'Mention or ID (optional)' }],
-            description: 'Show balance for another user or yourself',
-        }
-    );
-
+      const balance = await sudosos.getBalance(callerId);
+      await emoji(ctx, '💰');
+      await reply(ctx, `[💰] ${user.firstName} (${callerId}) has €${balance.amount.amount / 100}`);
+    }),
+    {
+      name: 'balance',
+      args: [{ name: 'userId', required: false, description: 'Mention or ID (optional)' }],
+      description: 'Show balance for another user or yourself',
+    },
+  );
 }

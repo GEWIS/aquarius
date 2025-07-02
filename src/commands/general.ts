@@ -1,4 +1,4 @@
-import {emoji, reply} from '../signal';
+import { emoji, reply } from '../signal';
 import { SignalMessage } from '../message';
 import { logger } from '../index';
 import { env } from '../env';

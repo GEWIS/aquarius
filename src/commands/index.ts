@@ -3,7 +3,7 @@ import { SignalMessage } from '../message';
 import { emoji, reply } from '../signal';
 import { TrustedNumbers } from '../trusted';
 import { logger } from '../index';
-import {help, logLevel, ping, version} from './general';
+import { help, logLevel, ping, version } from './general';
 
 export type CommandHandler = (ctx: SignalMessage, args: string[]) => Promise<void>;
 

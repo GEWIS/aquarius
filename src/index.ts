@@ -10,7 +10,7 @@ import { registerPortainerCommands } from './commands/portainer';
 import { env } from './env';
 import { SudoSOS } from './sudosos';
 import { registerSudoSOSCommands } from './commands/sudosos';
-import {LinkedUsers} from "./links";
+import { LinkedUsers } from './links';
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 global.WebSocket = WebSocket;
 
