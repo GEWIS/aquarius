@@ -11,6 +11,7 @@ export class TrustedNumbers {
 
   constructor(filePath = '/home/.local/share/aquarius/trusted.json') {
     this.filePath = filePath;
+    void this.load();
   }
 
   async load() {
