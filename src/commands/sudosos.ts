@@ -159,6 +159,8 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS) {
 
   const PRODUCTS_GRIMBERGEN = 51;
   const PRODUCTS_VIPER = 468;
+  const PRODUCTS_METER = 80;
+  const PRODUCTS_AQUARIUS = 244;
 
   commands.register(
     'lint-fix',
@@ -201,6 +203,46 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS) {
         { name: 'amount', required: true, description: 'Amount to buy' },
       ],
       description: 'Buys a *Classic* for the user',
+    },
+  );
+
+  commands.register(
+    'meter',
+    async (ctx, args) => {
+      await emoji(ctx, '🔄');
+      const userId = parseInt(args[0]);
+      if (isNaN(userId)) {
+        await emoji(ctx, '❌');
+        await reply(ctx, `Invalid arguments: ${args[0]}\n. Usage: meter [userId]`);
+        return;
+      }
+      const pos = await sudosos.getPosById(2);
+      await buyProduct(ctx, pos, PRODUCTS_METER, userId, 1);
+    },
+    {
+      name: 'meter',
+      args: [{ name: 'userId', required: true, description: 'User ID' }],
+      description: 'Zo kom je een *meter* verder',
+    },
+  );
+
+  commands.register(
+    'brak',
+    async (ctx, args) => {
+      await emoji(ctx, '🔄');
+      const userId = parseInt(args[0]);
+      if (isNaN(userId)) {
+        await emoji(ctx, '❌');
+        await reply(ctx, `Invalid arguments: ${args[0]}\n. Usage: brak [userId]`);
+        return;
+      }
+      const pos = await sudosos.getPosById(3);
+      await buyProduct(ctx, pos, PRODUCTS_AQUARIUS, userId, 1);
+    },
+    {
+      name: 'brak',
+      args: [{ name: 'userId', required: true, description: 'User ID' }],
+      description: '**Auw**',
     },
   );
 }
