@@ -6,24 +6,24 @@ import {
 import { SudoSOS } from '../sudosos';
 import { emoji, reply } from '../signal';
 import { SignalMessage } from '../message';
-import { LinkedUsers } from '../links';
 import { logger } from '../index';
+import { Users } from '../users';
 import { Commands } from './index';
 
 export function withExpandedArgs(
-  linkedUsers: LinkedUsers,
+  users: Users,
   handler: (ctx: SignalMessage, args: string[], callerId: number | null) => Promise<void>,
 ) {
   return async (ctx: SignalMessage) => {
-    const args = parseArgsWithMentions(ctx, linkedUsers);
-    const callerId = linkedUsers.getLinkedUserId(ctx.rawMessage.envelope.sourceUuid) ?? null;
+    const args = parseArgsWithMentions(ctx, users);
+    const callerId = users.getUser(ctx.rawMessage.envelope.sourceUuid)?.sudosId ?? null;
 
     logger.debug('Expanded args:', args, 'Caller ID:', callerId);
     await handler(ctx, args, callerId);
   };
 }
 
-export function parseArgsWithMentions(ctx: SignalMessage, linkedUsers: LinkedUsers): string[] {
+export function parseArgsWithMentions(ctx: SignalMessage, users: Users): string[] {
   let message = ctx.rawMessage.envelope.dataMessage.message;
   const mentions = ctx.rawMessage.envelope.dataMessage.mentions ?? [];
 
@@ -36,7 +36,7 @@ export function parseArgsWithMentions(ctx: SignalMessage, linkedUsers: LinkedUse
     if (mention.start === 0) {
       message = message.slice(0, start) + message.slice(end);
     } else {
-      const userId = linkedUsers.getLinkedUserId(mention.uuid);
+      const userId = users.getUser(mention.uuid)?.sudosId;
       if (userId != null) {
         message = message.slice(0, start) + String(userId) + message.slice(end);
       }
@@ -48,7 +48,7 @@ export function parseArgsWithMentions(ctx: SignalMessage, linkedUsers: LinkedUse
   return tokens;
 }
 
-export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, linkedUsers: LinkedUsers) {
+export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, users: Users) {
   commands.register(
     'sudosos',
     async (ctx) => {
@@ -204,7 +204,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, li
 
   commands.register(
     'lint-fix',
-    withExpandedArgs(linkedUsers, async (ctx, args, callerId) => {
+    withExpandedArgs(users, async (ctx, args, callerId) => {
       await emoji(ctx, '🔄');
       const userId = args[0] ? parseInt(args[0]) : callerId;
 
@@ -226,7 +226,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, li
 
   commands.register(
     'classic',
-    withExpandedArgs(linkedUsers, async (ctx, args, callerId) => {
+    withExpandedArgs(users, async (ctx, args, callerId) => {
       await emoji(ctx, '🔄');
       const amount = parseInt(args[0]);
       const userId = args[1] ? parseInt(args[1]) : callerId;
@@ -252,7 +252,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, li
 
   commands.register(
     'meter',
-    withExpandedArgs(linkedUsers, async (ctx, args, callerId) => {
+    withExpandedArgs(users, async (ctx, args, callerId) => {
       await emoji(ctx, '🔄');
       const userId = args[0] ? parseInt(args[0]) : callerId;
 
@@ -274,7 +274,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, li
 
   commands.register(
     'brak',
-    withExpandedArgs(linkedUsers, async (ctx, args, callerId) => {
+    withExpandedArgs(users, async (ctx, args, callerId) => {
       await emoji(ctx, '🔄');
       const userId = args[0] ? parseInt(args[0]) : callerId;
 
@@ -296,7 +296,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, li
 
   commands.register(
     'balance',
-    withExpandedArgs(linkedUsers, async (ctx, args, callerId) => {
+    withExpandedArgs(users, async (ctx, args, callerId) => {
       if (!callerId || isNaN(callerId)) {
         await emoji(ctx, '❌');
         await reply(ctx, `Please link your Signal UUID to a SudoSOS user ID.\nsee *help link*`);

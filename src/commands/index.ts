@@ -1,8 +1,8 @@
 import { AxiosError } from 'axios';
 import { SignalMessage } from '../message';
 import { emoji, reply } from '../signal';
-import { TrustedNumbers } from '../trusted';
 import { logger } from '../index';
+import { Users } from '../users';
 import { help, logLevel, ping, version } from './general';
 
 export type CommandHandler = (ctx: SignalMessage, args: string[]) => Promise<void>;
@@ -11,13 +11,12 @@ export type CommandDescription = {
   name: string;
   args: { name: string; required: boolean; description: string }[];
   description: string;
+  open?: boolean;
 };
 
 export class Commands {
-  constructor() {
-    this.trusted = new TrustedNumbers();
-    void this.trusted.load();
-    this.trusted.registerCommands(this);
+  constructor(users: Users) {
+    this.users = users;
 
     this.register('ping', ping, {
       description: 'Send a ping to the bot',
@@ -59,7 +58,7 @@ export class Commands {
 
   private commands = new Map<string, { handler: CommandHandler; description: CommandDescription }>();
 
-  private trusted: TrustedNumbers;
+  private users: Users;
 
   register(command: string, handler: CommandHandler, description: CommandDescription) {
     this.commands.set(command.toLowerCase(), { handler, description });
@@ -69,17 +68,29 @@ export class Commands {
     try {
       if (!ctx.message) return;
 
-      if (!this.trusted.isTrusted(ctx.rawMessage.envelope.sourceUuid) || !this.trusted.loaded) {
-        await emoji(ctx, '🚫');
-        return;
-      }
-
       const content = ctx.message.trim();
 
       const [cmd, ...args] = content.slice(1).trim().split(/\s+/);
       const c = cmd.trim().toLowerCase();
 
       const command = this.commands.get(c);
+      if (!command) return;
+
+      if (!this.users.loaded) {
+        await emoji(ctx, '❓');
+        return;
+      }
+
+      if (command.description.open) {
+        return command.handler(ctx, args);
+      }
+
+      if (!this.users.isTrusted(ctx.rawMessage.envelope.sourceUuid)) {
+        logger.trace('User', ctx.rawMessage.envelope.sourceUuid, 'is not trusted.');
+        await emoji(ctx, '🚫');
+        return;
+      }
+
       if (command) {
         await command.handler(ctx, args);
       }

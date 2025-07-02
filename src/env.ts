@@ -10,4 +10,5 @@ export const env = {
   SUDOSOS_API_URL: process.env.SUDOSOS_API_URL ?? 'https://sudosos.gewis.nl/api/v1',
   SUDOSOS_API_KEY: process.env.SUDOSOS_API_KEY ?? '',
   SUDOSOS_USER_ID: process.env.SUDOSOS_USER_ID ?? '',
+  ADMIN_UUID: process.env.ADMIN_UUID ?? '',
 };

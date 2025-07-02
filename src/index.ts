@@ -10,7 +10,8 @@ import { registerPortainerCommands } from './commands/portainer';
 import { env } from './env';
 import { SudoSOS } from './sudosos';
 import { registerSudoSOSCommands } from './commands/sudosos';
-import { LinkedUsers } from './links';
+import { Users } from './users';
+import { registerUserCommands } from './commands/users';
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 global.WebSocket = WebSocket;
 
@@ -19,7 +20,9 @@ logger.level = env.LOG_LEVEL || 'info';
 
 export const UPDATE_REQUEST_MESSAGE = '/app/data/update-request-message.json';
 
-const commands = new Commands();
+const users = new Users();
+const commands = new Commands(users);
+registerUserCommands(commands, users);
 
 if (import.meta.url === process.argv[1] || import.meta.url === `file://${process.argv[1]}`) {
   const source = new SignalRpcMessageSource(env.SIGNAL_CLI_API);
@@ -37,11 +40,9 @@ if (import.meta.url === process.argv[1] || import.meta.url === `file://${process
   if (SUDOSOS_API_URL === '' || SUDOSOS_API_KEY === '' || SUDOSOS_USER_ID === '') {
     logger.warn('SudoSOS API URL, API key or user ID not set. Skipping SudoSOS integration.');
   } else {
-    const linkedUsers = new LinkedUsers();
-    linkedUsers.registerCommands(commands);
     const sudosos = new SudoSOS(SUDOSOS_API_URL);
     logger.info('SudoSOS initialized');
-    registerSudoSOSCommands(commands, sudosos, linkedUsers);
+    registerSudoSOSCommands(commands, sudosos, users);
   }
 
   registerCommands(commands, source);
