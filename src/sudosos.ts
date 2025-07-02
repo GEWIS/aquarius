@@ -23,9 +23,7 @@ import {
   WriteoffsApi,
   ServerStatusResponse,
   ServerSettingsApi,
-  BasePointOfSaleResponse,
   PaginatedPointOfSaleResponse,
-  PointOfSaleResponse,
   PointOfSaleWithContainersResponse,
   TransactionResponse,
   RevisionRequest,
@@ -33,8 +31,8 @@ import {
   UserResponse,
 } from '@sudosos/sudosos-client';
 import axios, { AxiosHeaders, AxiosInstance, AxiosResponse } from 'axios';
-import { env } from './env';
 import { TransactionRequest } from '@sudosos/sudosos-client/src/api';
+import { env } from './env';
 
 let token: string = '';
 
@@ -119,7 +117,7 @@ export class SudoSOS {
     price: number,
   ): Promise<TransactionResponse> {
     const totalPriceInclVat = {
-      amount: price,
+      amount: price * amount,
       precision: 2,
       currency: 'EUR',
     };
@@ -138,6 +136,7 @@ export class SudoSOS {
     };
 
     const t: TransactionRequest = {
+      createdBy: parseInt(env.SUDOSOS_USER_ID),
       from,
       pointOfSale,
       subTransactions: [subTransactions],

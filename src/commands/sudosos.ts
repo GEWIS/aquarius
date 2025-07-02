@@ -1,7 +1,12 @@
+import {
+  ContainerWithProductsResponse,
+  PointOfSaleWithContainersResponse,
+  ProductResponse,
+} from '@sudosos/sudosos-client';
 import { SudoSOS } from '../sudosos';
 import { emoji, reply } from '../signal';
+import { SignalMessage } from '../message';
 import { Commands } from './index';
-import { ContainerWithProductsResponse, ProductResponse } from '@sudosos/sudosos-client';
 
 export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS) {
   commands.register(
@@ -48,7 +53,10 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS) {
     async (ctx, args) => {
       const [take, skip] = args.map((s) => parseInt(s));
       if (isNaN(take) || isNaN(skip)) {
-        await reply(ctx, `Invalid arguments: ${args}.\n Usage: sudosos-pos-list [take] [skip]`);
+        await reply(
+          ctx,
+          `Invalid arguments: ${args.map((a) => a.toString()).join(' ')}.\n Usage: sudosos-pos-list [take] [skip]`,
+        );
         return;
       }
 
@@ -99,61 +107,100 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS) {
     },
   );
 
+  async function buyProduct(
+    ctx: SignalMessage,
+    pos: PointOfSaleWithContainersResponse,
+    productId: number,
+    userId: number,
+    times: number = 1,
+  ) {
+    const user = await sudosos.getUserById(userId);
+    if (!user) {
+      await emoji(ctx, '❌');
+      await reply(ctx, `User ${userId} not found`);
+      return;
+    }
+
+    let p: { c: ContainerWithProductsResponse; p: ProductResponse } | null = null;
+    for (const container of pos.containers) {
+      for (const product of container.products) {
+        if (product.id === productId) {
+          p = {
+            c: container,
+            p: product,
+          };
+          break;
+        }
+      }
+    }
+
+    if (!p) {
+      await emoji(ctx, '❌');
+      await reply(ctx, `Product ${productId} not found`);
+      return;
+    }
+
+    const t = await sudosos.makeTransaction(
+      { id: pos.id, revision: pos.revision },
+      { container: { id: p.c.id, revision: p.c.revision ?? 0 }, to: p.c.owner.id },
+      { id: p.p.id, revision: p.p.revision },
+      times,
+      userId,
+      p.p.priceInclVat.amount,
+    );
+
+    const amount = times !== 1 ? times : 'a';
+    await emoji(ctx, '🍺');
+    await reply(
+      ctx,
+      `[🍺] Bought ${amount} *${p.p.name}* for ${user.firstName} (${user.id}), total price: €${t.totalPriceInclVat.amount / 100}`,
+    );
+  }
+
+  const PRODUCTS_GRIMBERGEN = 51;
+  const PRODUCTS_VIPER = 468;
+
   commands.register(
     'lint-fix',
     async (ctx, args) => {
+      await emoji(ctx, '🔄');
       const userId = parseInt(args[0]);
       if (isNaN(userId)) {
         await emoji(ctx, '❌');
         await reply(ctx, `Invalid arguments: ${args[0]}\n. Usage: lint-fix [userId]`);
         return;
       }
-
-      const user = await sudosos.getUserById(userId);
-      if (!user) {
-        await emoji(ctx, '❌');
-        await reply(ctx, `User ${userId} not found`);
-        return;
-      }
-
       const pos = await sudosos.getPosById(1);
-      let grimbergen: { c: ContainerWithProductsResponse; p: ProductResponse } | null = null;
-      for (const container of pos.containers) {
-        for (const product of container.products) {
-          if (product.id === 51) {
-            grimbergen = {
-              c: container,
-              p: product,
-            };
-            break;
-          }
-        }
-      }
-      if (!grimbergen) {
-        await emoji(ctx, '❌');
-        await reply(ctx, 'Could not find *Grimbergen Tripel*');
-        return;
-      }
-
-      const t = await sudosos.makeTransaction(
-        { id: pos.id, revision: pos.revision },
-        { container: { id: grimbergen.c.id, revision: grimbergen.c.revision ?? 0 }, to: grimbergen.c.owner.id },
-        { id: grimbergen.p.id, revision: grimbergen.p.revision },
-        1,
-        userId,
-        grimbergen.p.priceInclVat.amount,
-      );
-
-      await emoji(ctx, '🍺');
-      await reply(
-        ctx,
-        `Bought a *Grimbergen Tripel* for ${user.firstName} (${user.id}), total price: €${t.totalPriceInclVat.amount / 100}`,
-      );
+      await buyProduct(ctx, pos, PRODUCTS_GRIMBERGEN, userId);
     },
     {
       name: 'lint-fix',
       args: [{ name: 'userId', required: true, description: 'User ID' }],
       description: 'Buys a *Grimbergen Tripel* for the user',
+    },
+  );
+
+  commands.register(
+    'classic',
+    async (ctx, args) => {
+      await emoji(ctx, '🔄');
+      const userId = parseInt(args[0]);
+      const amount = parseInt(args[1]);
+      if (isNaN(userId) || isNaN(amount)) {
+        await emoji(ctx, '❌');
+        await reply(ctx, `Invalid arguments: ${args[0]}\n. Usage: classic [userId] [amount]`);
+        return;
+      }
+      const pos = await sudosos.getPosById(1);
+      await buyProduct(ctx, pos, PRODUCTS_VIPER, userId, amount);
+    },
+    {
+      name: 'classic',
+      args: [
+        { name: 'userId', required: true, description: 'User ID' },
+        { name: 'amount', required: true, description: 'Amount to buy' },
+      ],
+      description: 'Buys a *Classic* for the user',
     },
   );
 }

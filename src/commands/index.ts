@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import { SignalMessage } from '../message';
 import { emoji, reply } from '../signal';
 import { TrustedNumbers } from '../trusted';
@@ -77,8 +78,8 @@ export class Commands {
         await command.handler(ctx, args);
       }
     } catch (e) {
-      if ((e as any).resp.data) {
-        logger.error('Error executing command:', (e as any).data);
+      if (e instanceof AxiosError && e.response?.data) {
+        logger.error('Error executing command:', e.response.data);
       } else {
         logger.error('Error executing command:', e);
       }
