@@ -204,43 +204,47 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, li
 
   commands.register(
     'lint-fix',
-    async (ctx, args) => {
+    withExpandedArgs(linkedUsers, async (ctx, args, callerId) => {
       await emoji(ctx, '🔄');
-      const userId = parseInt(args[0]);
-      if (isNaN(userId)) {
+      const userId = args[0] ? parseInt(args[0]) : callerId;
+
+      if (userId == null || isNaN(userId)) {
         await emoji(ctx, '❌');
-        await reply(ctx, `Invalid arguments: ${args[0]}\n. Usage: lint-fix [userId]`);
+        await reply(ctx, `Missing or invalid user ID.\nUsage: lint-fix [userId]`);
         return;
       }
+
       const pos = await sudosos.getPosById(1);
       await buyProduct(ctx, pos, PRODUCTS_GRIMBERGEN, userId);
-    },
+    }),
     {
       name: 'lint-fix',
-      args: [{ name: 'userId', required: true, description: 'User ID' }],
+      args: [{ name: 'userId', required: false, description: 'User ID (optional if linked)' }],
       description: 'Buys a *Grimbergen Tripel* for the user',
     },
   );
 
   commands.register(
     'classic',
-    async (ctx, args) => {
+    withExpandedArgs(linkedUsers, async (ctx, args, callerId) => {
       await emoji(ctx, '🔄');
       const amount = parseInt(args[0]);
-      const userId = parseInt(args[1]);
-      if (isNaN(userId) || isNaN(amount)) {
+      const userId = args[1] ? parseInt(args[1]) : callerId;
+
+      if (isNaN(amount) || userId == null || isNaN(userId)) {
         await emoji(ctx, '❌');
-        await reply(ctx, `Invalid arguments: ${args[0]}\n. Usage: classic [userId] [amount]`);
+        await reply(ctx, `Usage: classic [amount] [userId]`);
         return;
       }
+
       const pos = await sudosos.getPosById(1);
       await buyProduct(ctx, pos, PRODUCTS_VIPER, userId, amount);
-    },
+    }),
     {
       name: 'classic',
       args: [
         { name: 'amount', required: true, description: 'Amount to buy' },
-        { name: 'userId', required: true, description: 'User ID' },
+        { name: 'userId', required: false, description: 'User ID (optional if linked)' },
       ],
       description: 'Buys a *Classic* for the user',
     },
@@ -248,40 +252,44 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, li
 
   commands.register(
     'meter',
-    async (ctx, args) => {
+    withExpandedArgs(linkedUsers, async (ctx, args, callerId) => {
       await emoji(ctx, '🔄');
-      const userId = parseInt(args[0]);
-      if (isNaN(userId)) {
+      const userId = args[0] ? parseInt(args[0]) : callerId;
+
+      if (userId == null || isNaN(userId)) {
         await emoji(ctx, '❌');
-        await reply(ctx, `Invalid arguments: ${args[0]}\n. Usage: meter [userId]`);
+        await reply(ctx, `Usage: meter [userId]`);
         return;
       }
+
       const pos = await sudosos.getPosById(2);
       await buyProduct(ctx, pos, PRODUCTS_METER, userId, 1);
-    },
+    }),
     {
       name: 'meter',
-      args: [{ name: 'userId', required: true, description: 'User ID' }],
+      args: [{ name: 'userId', required: false, description: 'User ID (optional if linked)' }],
       description: 'Zo kom je een *meter* verder',
     },
   );
 
   commands.register(
     'brak',
-    async (ctx, args) => {
+    withExpandedArgs(linkedUsers, async (ctx, args, callerId) => {
       await emoji(ctx, '🔄');
-      const userId = parseInt(args[0]);
-      if (isNaN(userId)) {
+      const userId = args[0] ? parseInt(args[0]) : callerId;
+
+      if (userId == null || isNaN(userId)) {
         await emoji(ctx, '❌');
-        await reply(ctx, `Invalid arguments: ${args[0]}\n. Usage: brak [userId]`);
+        await reply(ctx, `Usage: brak [userId]`);
         return;
       }
+
       const pos = await sudosos.getPosById(1);
       await buyProduct(ctx, pos, PRODUCTS_AQUARIUS, userId, 1);
-    },
+    }),
     {
       name: 'brak',
-      args: [{ name: 'userId', required: true, description: 'User ID' }],
+      args: [{ name: 'userId', required: false, description: 'User ID (optional if linked)' }],
       description: '**Auw**',
     },
   );
@@ -308,8 +316,8 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, li
     }),
     {
       name: 'balance',
-      args: [{ name: 'userId', required: false, description: 'Mention or ID (optional)' }],
-      description: 'Show balance for another user or yourself',
+      args: [],
+      description: 'Show your own balance',
     },
   );
 }
