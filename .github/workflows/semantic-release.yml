@@ -57,6 +57,7 @@ jobs:
           context: .
           platforms: linux/amd64
           push: false
+          load: true
           tags: local/aquarius:build
           cache-from: type=gha
           cache-to: type=gha,mode=max
