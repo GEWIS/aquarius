@@ -250,7 +250,9 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS) {
     'balance',
     async (ctx, args) => {
       const userId = parseInt(args[0]);
-      if (isNaN(userId)) {
+      const user = await sudosos.getUserById(userId);
+
+      if (!user) {
         await emoji(ctx, '❌');
         await reply(ctx, `Invalid arguments: ${args[0]}\n. Usage: balance [userId]`);
         return;
@@ -258,7 +260,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS) {
 
       const balance = await sudosos.getBalance(userId);
       await emoji(ctx, '💰');
-      await reply(ctx, `[💰] User ${userId} has €${balance.amount.amount / 100} euros`);
+      await reply(ctx, `[💰] User ${user.firstName} (${userId}) has €${balance.amount.amount / 100} euros`);
     },
     {
       name: 'balance',
