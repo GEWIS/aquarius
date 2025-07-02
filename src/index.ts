@@ -8,6 +8,8 @@ import { Portainer } from './portainer';
 import { registerCommands } from './commands/signal';
 import { registerPortainerCommands } from './commands/portainer';
 import { env } from './env';
+import { SudoSOS } from './sudosos';
+import { registerSudoSOSCommands } from './commands/sudosos';
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 global.WebSocket = WebSocket;
 
@@ -28,6 +30,15 @@ if (import.meta.url === process.argv[1] || import.meta.url === `file://${process
   } else {
     const portainer = new Portainer(PORTAINER_URL, PORTAINER_API_KEY);
     registerPortainerCommands(commands, portainer);
+  }
+
+  const { SUDOSOS_API_URL, SUDOSOS_API_KEY, SUDOSOS_USER_ID } = env;
+  if (SUDOSOS_API_URL === '' || SUDOSOS_API_KEY === '' || SUDOSOS_USER_ID === '') {
+    logger.warn('SudoSOS API URL, API key or user ID not set. Skipping SudoSOS integration.');
+  } else {
+    const sudosos = new SudoSOS(SUDOSOS_API_URL);
+    logger.info('SudoSOS initialized');
+    registerSudoSOSCommands(commands, sudosos);
   }
 
   registerCommands(commands, source);

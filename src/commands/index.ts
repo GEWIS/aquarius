@@ -77,7 +77,11 @@ export class Commands {
         await command.handler(ctx, args);
       }
     } catch (e) {
-      logger.error('Error executing command:', e);
+      if ((e as any).resp.data) {
+        logger.error('Error executing command:', (e as any).data);
+      } else {
+        logger.error('Error executing command:', e);
+      }
       await emoji(ctx, '❌');
       await reply(ctx, `Failed to execute command: ${String(e)}`);
     }

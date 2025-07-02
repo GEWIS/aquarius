@@ -7,4 +7,7 @@ export const env = {
   DOCKER_VERSION: process.env.DOCKER_VERSION ?? 'unknown',
   GIT_COMMIT_SHA: process.env.GIT_COMMIT_SHA ?? 'unknown',
   REPOSITORY: process.env.REPOSITORY ?? 'gewis/aquarius',
+  SUDOSOS_API_URL: process.env.SUDOSOS_API_URL ?? 'https://sudosos.gewis.nl/api/v1',
+  SUDOSOS_API_KEY: process.env.SUDOSOS_API_KEY ?? '',
+  SUDOSOS_USER_ID: process.env.SUDOSOS_USER_ID ?? '',
 };
