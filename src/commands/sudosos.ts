@@ -245,4 +245,25 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS) {
       description: '**Auw**',
     },
   );
+
+  commands.register(
+    'balance',
+    async (ctx, args) => {
+      const userId = parseInt(args[0]);
+      if (isNaN(userId)) {
+        await emoji(ctx, '❌');
+        await reply(ctx, `Invalid arguments: ${args[0]}\n. Usage: balance [userId]`);
+        return;
+      }
+
+      const balance = await sudosos.getBalance(userId);
+      await emoji(ctx, '💰');
+      await reply(ctx, `[💰] User ${userId} has €${balance.amount.amount / 100} euros`);
+    },
+    {
+      name: 'balance',
+      args: [{ name: 'userId', required: true, description: 'User ID' }],
+      description: 'Show balance of user',
+    },
+  );
 }

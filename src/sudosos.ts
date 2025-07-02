@@ -29,6 +29,7 @@ import {
   RevisionRequest,
   SubTransactionRequest,
   UserResponse,
+  BalanceResponse,
 } from '@sudosos/sudosos-client';
 import axios, { AxiosHeaders, AxiosResponse, AxiosInstance } from 'axios';
 import { TransactionRequest } from '@sudosos/sudosos-client/src/api';
@@ -151,6 +152,10 @@ export class SudoSOS {
     };
 
     return (await this.apiService.transaction.createTransaction(t)).data;
+  }
+
+  async getBalance(userId: number): Promise<BalanceResponse> {
+    return (await this.apiService.balance.getBalanceId(userId)).data;
   }
 }
 
