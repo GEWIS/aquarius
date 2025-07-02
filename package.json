@@ -29,6 +29,7 @@
     "@sudosos/sudosos-client": "github:GEWIS/sudosos-client#693f5f138073f342ad01b029452d8db5ebffaf07",
     "@types/axios": "^0.14.4",
     "axios": "^1.10.0",
+    "jwt-decode": "^4.0.0",
     "log4js": "^6.9.1",
     "portainer-api-client": "^0.2.0",
     "signal-rest-ts": "^0.1.1",

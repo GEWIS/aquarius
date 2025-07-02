@@ -186,8 +186,8 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS) {
     'classic',
     async (ctx, args) => {
       await emoji(ctx, '🔄');
-      const userId = parseInt(args[0]);
-      const amount = parseInt(args[1]);
+      const amount = parseInt(args[0]);
+      const userId = parseInt(args[1]);
       if (isNaN(userId) || isNaN(amount)) {
         await emoji(ctx, '❌');
         await reply(ctx, `Invalid arguments: ${args[0]}\n. Usage: classic [userId] [amount]`);
@@ -199,8 +199,8 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS) {
     {
       name: 'classic',
       args: [
-        { name: 'userId', required: true, description: 'User ID' },
         { name: 'amount', required: true, description: 'Amount to buy' },
+        { name: 'userId', required: true, description: 'User ID' },
       ],
       description: 'Buys a *Classic* for the user',
     },

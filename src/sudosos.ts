@@ -30,49 +30,56 @@ import {
   SubTransactionRequest,
   UserResponse,
 } from '@sudosos/sudosos-client';
-import axios, { AxiosHeaders, AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosHeaders, AxiosResponse, AxiosInstance } from 'axios';
 import { TransactionRequest } from '@sudosos/sudosos-client/src/api';
+import { jwtDecode, JwtPayload } from 'jwt-decode';
 import { env } from './env';
 
 let token: string = '';
+let tokenExpiry: number = 0;
 
-export function updateTokenIfNecessary(response: AxiosResponse) {
-  if ((response.headers as AxiosHeaders).has('Set-Authorization')) {
-    const newToken = (response.headers as AxiosHeaders).get('Set-Authorization') as string;
-    if (newToken) token = newToken;
+function parseAndSetToken(raw: string) {
+  const payload = jwtDecode<JwtPayload>(raw);
+  if (!payload.exp) throw new Error('Missing token expiry');
+  token = raw;
+  tokenExpiry = payload.exp * 1000;
+}
+
+function isTokenExpired(): boolean {
+  return Date.now() >= tokenExpiry;
+}
+
+async function refreshTokenIfNeeded(): Promise<void> {
+  if (!token || isTokenExpired()) {
+    await getTokenEnv(); // this should call `parseAndSetToken`
   }
 }
 
 export async function getToken(basePath: string, key: string, userId: number): Promise<void> {
   const configuration = new Configuration({ basePath });
-
-  const res = await new AuthenticateApi(configuration).keyAuthentication({
-    key,
-    userId,
-  });
-  token = res.data.token;
+  const res = await new AuthenticateApi(configuration).keyAuthentication({ key, userId });
+  parseAndSetToken(res.data.token);
 }
 
 export function getTokenEnv(): Promise<void> {
   return getToken(env.SUDOSOS_API_URL, env.SUDOSOS_API_KEY, parseInt(env.SUDOSOS_USER_ID));
 }
 
-// Create an axios instance
-const axiosInstance: AxiosInstance = axios.create();
-
-let retry = false;
-
-// Add a response interceptor to the axios instance
-axiosInstance.interceptors.response.use(async (response: AxiosResponse) => {
-  updateTokenIfNecessary(response);
-  if (response.status === 401) {
-    if (retry) throw new Error('Token expired');
-    await getTokenEnv().then(() => {
-      retry = true;
-      return axiosInstance.request(response.config);
-    });
+export function updateTokenIfNecessary(response: AxiosResponse) {
+  if ((response.headers as AxiosHeaders).has('Set-Authorization')) {
+    const newToken = (response.headers as AxiosHeaders).get('Set-Authorization') as string;
+    if (newToken) parseAndSetToken(newToken);
   }
-  retry = false;
+}
+
+const axiosInstance: AxiosInstance = axios.create();
+axiosInstance.interceptors.request.use(async (config) => {
+  await refreshTokenIfNeeded();
+  return config;
+});
+
+axiosInstance.interceptors.response.use((response: AxiosResponse) => {
+  updateTokenIfNecessary(response);
   return response;
 });
 
