@@ -236,7 +236,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS) {
         await reply(ctx, `Invalid arguments: ${args[0]}\n. Usage: brak [userId]`);
         return;
       }
-      const pos = await sudosos.getPosById(3);
+      const pos = await sudosos.getPosById(1);
       await buyProduct(ctx, pos, PRODUCTS_AQUARIUS, userId, 1);
     },
     {
