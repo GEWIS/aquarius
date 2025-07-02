@@ -106,7 +106,7 @@ export function registerUserCommands(commands: Commands, users: Users) {
       const trusted = users.trusted();
 
       const getTeams = (u: StoredUser) => {
-        if (!u.teams || u.teams.size === 0) return '';
+        if (!u.teams) return '';
 
         // Convert the set values to strings representing team names
         return Array.from(u.teams)
