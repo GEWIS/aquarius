@@ -4,7 +4,6 @@ import { SignalMessage } from '../message';
 import { emoji, reply } from '../signal';
 import { logger } from '../index';
 
-
 export function registerUserCommands(commands: Commands, users: Users) {
   commands.register(
     'register',
