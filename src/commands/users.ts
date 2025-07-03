@@ -3,6 +3,7 @@ import { StoredUser, TEAMS, Users } from '../users';
 import { SignalMessage } from '../message';
 import { emoji, reply } from '../signal';
 import { logger } from '../index';
+import { env } from '../env';
 import { isAdmin } from './policy';
 
 export function registerUserCommands(commands: Commands, users: Users) {
@@ -101,20 +102,26 @@ export function registerUserCommands(commands: Commands, users: Users) {
       name: 'trusted',
       args: [],
       description: 'List all trusted registered users',
+      aliases: ['list'],
     },
     handler: async (ctx: CommandContext) => {
       const trusted = users.trusted();
 
       const getTeams = (u: StoredUser) => {
-        if (!u.teams) return '';
-
+        if (!u.teams || u.teams.size === 0) return '';
         // Convert the set values to strings representing team names
         return Array.from(u.teams)
           .map((teamId: number) => teamNamesMap[teamId] || `Unknown Team (${teamId})`)
           .join(', ');
       };
 
-      const list = trusted.map((u) => `${u.name} [${getTeams(u)}] ${u.sudosId ? ` → ${u.sudosId}` : ''}`).join('\n');
+      const adminStr = (u: StoredUser) => {
+        if (u.uuid !== env.ADMIN_UUID) return '';
+        return '[👑] ';
+      };
+      const list = trusted
+        .map((u) => `${adminStr(u)}${u.name} [${getTeams(u)}] ${u.sudosId ? ` → ${u.sudosId}` : ''}`)
+        .join('\n');
       await reply(ctx.msg, `Trusted:\n${list || '(none)'}`);
     },
     policy: isAdmin,

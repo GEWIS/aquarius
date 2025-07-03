@@ -204,10 +204,12 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
   const PRODUCTS_METER = 80;
   const PRODUCTS_AQUARIUS = 244;
 
-  async function getUser(ctx: CommandContext, arg: string): Promise<UserResponse | null> {
-    const parsed = parseInt(arg);
-    if (!isNaN(parsed)) {
-      return await sudosos.getUserById(parsed).catch(() => null);
+  async function getUser(ctx: CommandContext, arg?: string): Promise<UserResponse | null> {
+    if (arg) {
+      const parsed = parseInt(arg);
+      if (!isNaN(parsed)) {
+        return await sudosos.getUserById(parsed).catch(() => null);
+      }
     }
 
     const callerId = users.getUser(ctx.msg.rawMessage.envelope.sourceUuid)?.sudosId ?? null;
@@ -302,10 +304,10 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
       description: 'Show your own balance',
     },
     handler: withExpandedArgs(users, async (ctx: CommandContext) => {
-      const user = await getUser(ctx, ctx.args[0]);
+      const user = await getUser(ctx, undefined);
       if (!user) {
         await emoji(ctx.msg, '❌');
-        await reply(ctx.msg, `Missing or invalid user ID.\nUsage: lint-fix [userId]`);
+        await reply(ctx.msg, `Missing or invalid user ID.\nUsage: balance [userId]`);
         return;
       }
 

@@ -34,6 +34,20 @@ export class Users {
     try {
       const data = await fs.readFile(this.filePath, 'utf-8');
       const list: StoredUser[] = JSON.parse(data) as StoredUser[];
+
+      for (const user of list) {
+        // Fix: force teams into Set<number> always
+        const raw: unknown = user.teams;
+        if (Array.isArray(raw)) {
+          user.teams = new Set(raw);
+        } else if (raw && typeof raw === 'object') {
+          // JSON-serialized Set shows as `{}` — treat as empty
+          user.teams = new Set();
+        } else {
+          user.teams = undefined;
+        }
+      }
+
       this.users = new Map(list.map((u) => [u.uuid, u]));
       logger.info(`Loaded ${this.users.size} users.`);
     } catch {
@@ -48,9 +62,20 @@ export class Users {
     }
   }
 
+  getUsers() {
+    return this.users.values();
+  }
+
   async save() {
+    logger.debug('Saving users', this.users.values());
     await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-    await fs.writeFile(this.filePath, JSON.stringify([...this.users.values()], null, 2), 'utf-8');
+
+    const serializableUsers = [...this.users.values()].map((u) => ({
+      ...u,
+      teams: u.teams ? [...u.teams] : undefined, // convert Set to array
+    }));
+
+    await fs.writeFile(this.filePath, JSON.stringify(serializableUsers, null, 2), 'utf-8');
   }
 
   isTrusted(uuid: string): boolean {
@@ -83,7 +108,10 @@ export class Users {
   removeTeam(uuid: string, team: number) {
     const user = this.users.get(uuid);
     if (user) {
-      user.teams?.delete(team);
+      if (!user.teams) {
+        user.teams = new Set();
+      }
+      user.teams.delete(team);
       void this.save();
     }
   }
@@ -94,7 +122,7 @@ export class Users {
       if (!user.teams) {
         user.teams = new Set();
       }
-      user.teams?.add(team);
+      user.teams.add(team);
       void this.save();
     }
   }

@@ -1,3 +1,5 @@
+import path from 'path';
+import { readFile } from 'node:fs/promises';
 import { emoji, reply } from '../signal';
 import { logger } from '../index';
 import { env } from '../env';
@@ -14,7 +16,11 @@ export function help(commands: Commands): CommandHandler {
     if (args.length === 0) {
       // List all commands
       let message = 'Available commands:\n';
-      for (const { description } of commands.commands.values()) {
+      const available = commands.commands.values().filter((c) => {
+        return c.registered === false || c.policy === undefined || c.policy(ctx);
+      });
+
+      for (const { description } of available) {
         message += `\n• **${description.name}** — ${description.description || 'No description'}`;
       }
       await reply(ctx.msg, message);
@@ -120,6 +126,27 @@ export async function logLevel(ctx: CommandContext): Promise<void> {
   await emoji(ctx.msg, '✅');
 }
 
+export async function logs(ctx: CommandContext): Promise<void> {
+  const n = parseInt(ctx.args[0], 10);
+  if (isNaN(n) || n <= 0) {
+    await reply(ctx.msg, 'Usage: logs <n> — where n is a positive number of lines');
+    return;
+  }
+
+  const logPath = path.resolve('app/data/app.log');
+
+  try {
+    const data = await readFile(logPath, 'utf8');
+    const lines = data.trim().split('\n');
+    const lastLines = lines.slice(-n).join('\n');
+
+    await reply(ctx.msg, `Last ${Math.min(n, lines.length)} log lines:\n\n${lastLines}`);
+  } catch (err) {
+    await reply(ctx.msg, 'Could not read log file.');
+    console.error('logs command error:', err);
+  }
+}
+
 export function registerGeneral(commands: Commands) {
   commands.register({
     description: {
@@ -168,5 +195,16 @@ export function registerGeneral(commands: Commands) {
       await h(ctx);
     },
     registered: true,
+  });
+
+  commands.register({
+    description: {
+      name: 'logs',
+      args: [{ name: 'n', required: true, description: 'Number of lines to show' }],
+      description: 'Show the last n lines of the log file',
+      aliases: ['log'],
+    },
+    handler: logs,
+    policy: isAdmin,
   });
 }
