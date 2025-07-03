@@ -4,7 +4,7 @@ import { emoji, reply } from '../signal';
 import { logger } from '../index';
 import { env } from '../env';
 import { isAdmin } from './policy';
-import { CommandContext, CommandHandler, Commands } from './index';
+import {Command, CommandContext, CommandHandler, Commands} from './index';
 
 export function ping(ctx: CommandContext): Promise<void> {
   return reply(ctx.msg, `Pong! [${ctx.args.join(' ')}]`);
@@ -16,9 +16,14 @@ export function help(commands: Commands): CommandHandler {
     if (args.length === 0) {
       // List all commands
       let message = 'Available commands:\n';
-      const available = commands.commands.values().filter((c) => {
-        return c.registered === false || c.policy === undefined || c.policy(ctx);
-      });
+
+      const available: Command[] = [];
+      for (const c of [...commands.commands.values()]) {
+        if (c.registered === false || c.policy === undefined || await c.policy(ctx)) {
+          available.push(c);
+        }
+      }
+
 
       for (const { description } of available) {
         message += `\n• **${description.name}** — ${description.description || 'No description'}`;

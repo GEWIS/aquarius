@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import {
   ContainerWithProductsResponse,
   PointOfSaleWithContainersResponse,
@@ -99,6 +100,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
         { name: 'skip', required: false, description: 'Number of records to skip' },
       ],
       description: 'List all Points of sale',
+      aliases: ['pos-list', 'posl', 'pl'],
     },
     handler: async (ctx: CommandContext) => {
       const [take, skip] = ctx.args.map((s) => parseInt(s));
@@ -123,6 +125,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
       name: 'sudosos-pos',
       args: [{ name: 'id', required: true, description: 'Point of sale ID' }],
       description: 'Get Point of sale details',
+      aliases: ['pos', 'p'],
     },
     handler: async (ctx: CommandContext) => {
       const id = parseInt(ctx.args[0]);
@@ -221,30 +224,44 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
     return user;
   }
 
-  const buy = async (ctx: CommandContext, productId: number, posId: number, userArg?: number, amountArg?: number) => {
-    await emoji(ctx.msg, '🔄');
+  commands.register({
+    description: {
+      name: 'buy',
+      args: [
+        { name: 'productId', required: true, description: 'Product ID to buy' },
+        { name: 'posId', required: true, description: 'Point of Sale ID' },
+        { name: 'amount', required: false, description: 'Amount (default: 1)' },
+        { name: 'userId', required: false, description: 'User ID (optional if linked)' },
+      ],
+      description: 'Buy any product for any user at any POS',
+    },
+    handler: withExpandedArgs(users, async (ctx: CommandContext) => {
+      await emoji(ctx.msg, '🔄');
+      const [productIdArg, posIdArg, amountArg, userArg] = ctx.args;
 
-    let amount = 1;
-    if (amountArg !== undefined) {
-      const fromArg = parseInt(ctx.args[amountArg]);
-      if (isNaN(fromArg)) {
-        await reply(ctx.msg, `Invalid amount: ${ctx.args[amountArg]}`);
+      const productId = parseInt(productIdArg);
+      const posId = parseInt(posIdArg);
+      const amount = amountArg ? parseInt(amountArg) : 1;
+
+      if (isNaN(productId) || isNaN(posId) || (amountArg && isNaN(amount))) {
+        await reply(ctx.msg, `Usage: buy <productId> <posId> [amount] [userId]`);
         return;
       }
-      amount = fromArg;
-    }
 
-    const arg = userArg !== undefined ? ctx.args[userArg] : '';
-    const user = await getUser(ctx, arg);
-    if (!user) {
-      await emoji(ctx.msg, '❌');
-      await reply(ctx.msg, `Missing or invalid user ID.\nUsage: lint-fix [userId]`);
-      return;
-    }
+      const user = await getUser(ctx, userArg);
+      if (!user) {
+        await emoji(ctx.msg, '❌');
+        await reply(ctx.msg, `Missing or invalid user ID.\nUsage: buy <productId> <posId> [amount]buy [userId]`);
+        return;
+      }
 
-    const pos = await sudosos.getPosById(posId);
-    await buyProduct(ctx.msg, pos, productId, user.id, amount);
-  };
+      const pos = await sudosos.getPosById(posId);
+      await buyProduct(ctx.msg, pos, productId, user.id, amount);
+    }),
+    policy: isGuest,
+  });
+
+  // --- Aliases with Custom Descriptions ---
 
   commands.register({
     description: {
@@ -253,10 +270,20 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
       description: 'Buys a *Grimbergen Tripel* for the user',
     },
     handler: withExpandedArgs(users, async (ctx: CommandContext) => {
-      await buy(ctx, PRODUCTS_GRIMBERGEN, 1, 0);
+      const userArg = ctx.args[0];
+      await buyCommand().handler({
+        ...ctx,
+        args: [String(PRODUCTS_GRIMBERGEN), '1', '1', userArg].filter(Boolean),
+      });
     }),
     policy: isGuest,
   });
+
+  const buyCommand = () => {
+    const b = commands.getCommand('buy');
+    assert(b);
+    return b;
+  };
 
   commands.register({
     description: {
@@ -268,7 +295,12 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
       description: 'Buys a *Classic* for the user',
     },
     handler: withExpandedArgs(users, async (ctx: CommandContext) => {
-      await buy(ctx, PRODUCTS_VIPER, 1, 1, 0);
+      const amount = ctx.args[0];
+      const userArg = ctx.args[1];
+      await buyCommand().handler({
+        ...ctx,
+        args: [String(PRODUCTS_VIPER), '1', amount, userArg].filter(Boolean),
+      });
     }),
     policy: isGuest,
   });
@@ -280,7 +312,11 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
       description: 'Zo kom je een *meter* verder',
     },
     handler: withExpandedArgs(users, async (ctx: CommandContext) => {
-      await buy(ctx, PRODUCTS_METER, 2, 0);
+      const userArg = ctx.args[0];
+      await buyCommand().handler({
+        ...ctx,
+        args: [String(PRODUCTS_METER), '2', '1', userArg].filter(Boolean),
+      });
     }),
     policy: isGuest,
   });
@@ -292,28 +328,11 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
       description: '**Auw**',
     },
     handler: withExpandedArgs(users, async (ctx: CommandContext) => {
-      await buy(ctx, PRODUCTS_AQUARIUS, 1, 0);
-    }),
-    policy: isGuest,
-  });
-
-  commands.register({
-    description: {
-      name: 'balance',
-      args: [],
-      description: 'Show your own balance',
-    },
-    handler: withExpandedArgs(users, async (ctx: CommandContext) => {
-      const user = await getUser(ctx, undefined);
-      if (!user) {
-        await emoji(ctx.msg, '❌');
-        await reply(ctx.msg, `Missing or invalid user ID.\nUsage: balance [userId]`);
-        return;
-      }
-
-      const balance = await sudosos.getBalance(user.id);
-      await emoji(ctx.msg, '💰');
-      await reply(ctx.msg, `[💰] ${user.firstName} (${user.id}) has €${balance.amount.amount / 100}`);
+      const userArg = ctx.args[0];
+      await buyCommand().handler({
+        ...ctx,
+        args: [String(PRODUCTS_AQUARIUS), '1', '1', userArg].filter(Boolean),
+      });
     }),
     policy: isGuest,
   });
