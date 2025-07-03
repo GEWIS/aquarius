@@ -10,6 +10,7 @@
   "scripts": {
     "build": "tsc",
     "start": "src/tsx index.ts",
+    "test": "vitest run",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --ignore-path .gitignore --check ./src/",
@@ -23,7 +24,8 @@
     "eslint": "^9.24.0",
     "prettier": "^3.5.3",
     "tsx": "^4.20.3",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@sudosos/sudosos-client": "github:GEWIS/sudosos-client#693f5f138073f342ad01b029452d8db5ebffaf07",
@@ -34,5 +36,6 @@
     "portainer-api-client": "^0.2.0",
     "signal-rest-ts": "^0.1.1",
     "ws": "^8.13.0"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
