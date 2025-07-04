@@ -47,6 +47,15 @@ export class Portainer {
     await this.client.callAPIWithKey('POST', `/api/stacks/${stack.Id}/stop?endpointId=${stack.EndpointId}`);
   }
 
+  async repullService(service: string, endpointId: number): Promise<void> {
+    const request = {
+      PullImage: true,
+      ServiceID: service,
+    };
+
+    await this.client.callAPIWithKey('PUT', `/api/endpoints/${endpointId}/forceupdateservice`, request);
+  }
+
   async redeployStack(stack: Stack): Promise<void> {
     const fileResponse: { StackFileContent: string } = await this.client.callAPIWithKey(
       'GET',

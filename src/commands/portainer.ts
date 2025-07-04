@@ -203,4 +203,26 @@ export function registerPortainerCommands(commands: Commands, portainer: Portain
     }),
     policy: isCBC,
   });
+
+  commands.register({
+    description: {
+      name: 'repull',
+      args: [],
+      description: 'Pull the latest version of the stack',
+      aliases: ['r'],
+    },
+    handler: wrap(async (ctx: CommandContext) => {
+      await emoji(ctx.msg, '🔄');
+      await prepareReaction(ctx.msg, '👋');
+      const service = env.SERVICE_NAME;
+      const stack = await portainer.getStack(env.STACK_NAME);
+
+      if (!stack) return reply(ctx.msg, 'Stack not found, has the env var STACK_NAME been set?');
+      if (!service) return reply(ctx.msg, 'Service not found, has the env var SERVICE_NAME been set?');
+
+      await portainer.repullService(service, 5);
+      await emoji(ctx.msg, '✅');
+    }),
+    policy: isCBC,
+  });
 }

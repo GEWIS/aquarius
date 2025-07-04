@@ -11,4 +11,5 @@ export const env = {
   SUDOSOS_API_KEY: process.env.SUDOSOS_API_KEY ?? '',
   SUDOSOS_USER_ID: process.env.SUDOSOS_USER_ID ?? '',
   ADMIN_UUID: process.env.ADMIN_UUID ?? '',
+  SERVICE_NAME: process.env.SERVICE_NAME ?? 'wrmwz8t7zkbujomdjgvu2accp',
 };

@@ -72,7 +72,7 @@ export class Users {
 
     const serializableUsers = [...this.users.values()].map((u) => ({
       ...u,
-      teams: u.teams ? [...u.teams] : undefined, // convert Set to array
+      teams: u.teams ? [...u.teams.values()] : undefined,
     }));
 
     await fs.writeFile(this.filePath, JSON.stringify(serializableUsers, null, 2), 'utf-8');

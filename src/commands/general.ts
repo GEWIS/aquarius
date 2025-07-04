@@ -31,7 +31,7 @@ export function help(commands: Commands): CommandHandler {
     } else {
       // Show help for one command
       const cmdName = args[0].toLowerCase();
-      const command = commands.commands.get(cmdName);
+      const command = commands.getCommand(cmdName);
       if (!command) {
         await reply(ctx.msg, `Command "${cmdName}" not found.`);
         return;

@@ -1,4 +1,3 @@
-import assert from 'node:assert';
 import {
   ContainerWithProductsResponse,
   PointOfSaleWithContainersResponse,
@@ -224,6 +223,35 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
     return user;
   }
 
+  const buy = async (
+    ctx: CommandContext,
+    productIdArg: string,
+    posIdArg: string,
+    amountArg: string,
+    userId?: string,
+  ) => {
+    await emoji(ctx.msg, '🔄');
+
+    const productId = parseInt(productIdArg);
+    const posId = parseInt(posIdArg);
+    const amount = amountArg ? parseInt(amountArg) : 1;
+
+    if (isNaN(productId) || isNaN(posId) || (amountArg && isNaN(amount))) {
+      await reply(ctx.msg, `Usage: buy <productId> <posId> [amount] [userId]`);
+      return;
+    }
+
+    const user = await getUser(ctx, userId);
+    if (!user) {
+      await emoji(ctx.msg, '❌');
+      await reply(ctx.msg, `Missing or invalid user ID.\nUsage: buy <productId> <posId> [amount]buy [userId]`);
+      return;
+    }
+
+    const pos = await sudosos.getPosById(posId);
+    await buyProduct(ctx.msg, pos, productId, user.id, amount);
+  };
+
   commands.register({
     description: {
       name: 'buy',
@@ -236,27 +264,7 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
       description: 'Buy any product for any user at any POS',
     },
     handler: withExpandedArgs(users, async (ctx: CommandContext) => {
-      await emoji(ctx.msg, '🔄');
-      const [productIdArg, posIdArg, amountArg, userArg] = ctx.args;
-
-      const productId = parseInt(productIdArg);
-      const posId = parseInt(posIdArg);
-      const amount = amountArg ? parseInt(amountArg) : 1;
-
-      if (isNaN(productId) || isNaN(posId) || (amountArg && isNaN(amount))) {
-        await reply(ctx.msg, `Usage: buy <productId> <posId> [amount] [userId]`);
-        return;
-      }
-
-      const user = await getUser(ctx, userArg);
-      if (!user) {
-        await emoji(ctx.msg, '❌');
-        await reply(ctx.msg, `Missing or invalid user ID.\nUsage: buy <productId> <posId> [amount]buy [userId]`);
-        return;
-      }
-
-      const pos = await sudosos.getPosById(posId);
-      await buyProduct(ctx.msg, pos, productId, user.id, amount);
+      await buy(ctx, ctx.args[0], ctx.args[1], ctx.args[2], ctx.args[3]);
     }),
     policy: isGuest,
   });
@@ -271,19 +279,11 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
     },
     handler: withExpandedArgs(users, async (ctx: CommandContext) => {
       const userArg = ctx.args[0];
-      await buyCommand().handler({
-        ...ctx,
-        args: [String(PRODUCTS_GRIMBERGEN), '1', '1', userArg].filter(Boolean),
-      });
+
+      await buy(ctx, String(PRODUCTS_GRIMBERGEN), '1', '1', userArg);
     }),
     policy: isGuest,
   });
-
-  const buyCommand = () => {
-    const b = commands.getCommand('buy');
-    assert(b);
-    return b;
-  };
 
   commands.register({
     description: {
@@ -297,10 +297,8 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
     handler: withExpandedArgs(users, async (ctx: CommandContext) => {
       const amount = ctx.args[0];
       const userArg = ctx.args[1];
-      await buyCommand().handler({
-        ...ctx,
-        args: [String(PRODUCTS_VIPER), '1', amount, userArg].filter(Boolean),
-      });
+
+      await buy(ctx, String(PRODUCTS_VIPER), '1', amount, userArg);
     }),
     policy: isGuest,
   });
@@ -313,10 +311,8 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
     },
     handler: withExpandedArgs(users, async (ctx: CommandContext) => {
       const userArg = ctx.args[0];
-      await buyCommand().handler({
-        ...ctx,
-        args: [String(PRODUCTS_METER), '2', '1', userArg].filter(Boolean),
-      });
+
+      await buy(ctx, String(PRODUCTS_METER), '2', '1', userArg);
     }),
     policy: isGuest,
   });
@@ -329,10 +325,28 @@ export function registerSudoSOSCommands(commands: Commands, sudosos: SudoSOS, us
     },
     handler: withExpandedArgs(users, async (ctx: CommandContext) => {
       const userArg = ctx.args[0];
-      await buyCommand().handler({
-        ...ctx,
-        args: [String(PRODUCTS_AQUARIUS), '1', '1', userArg].filter(Boolean),
-      });
+      await buy(ctx, String(PRODUCTS_AQUARIUS), '1', '1', userArg);
+    }),
+    policy: isGuest,
+  });
+
+  commands.register({
+    description: {
+      name: 'balance',
+      args: [],
+      description: 'Show your own balance',
+    },
+    handler: withExpandedArgs(users, async (ctx: CommandContext) => {
+      const user = await getUser(ctx, undefined);
+      if (!user) {
+        await emoji(ctx.msg, '❌');
+        await reply(ctx.msg, `Missing or invalid user ID.\nUsage: balance [userId]`);
+        return;
+      }
+
+      const balance = await sudosos.getBalance(user.id);
+      await emoji(ctx.msg, '💰');
+      await reply(ctx.msg, `[💰] ${user.firstName} (${user.id}) has €${balance.amount.amount / 100}`);
     }),
     policy: isGuest,
   });
