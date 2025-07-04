@@ -146,8 +146,8 @@ export function registerSudoSOSModule(api: ModuleApi) {
     handler: async (ctx) => {
       const [take, skip] = ctx.parsedArgs;
 
-      let t = take ?? 10;
-      let s = skip ?? 0;
+      const t = take ?? 10;
+      const s = skip ?? 0;
 
       const { _pagination, records } = await sudosos.getPos(t, s);
       const msg = records.map((p) => `• *${p.name}* (${p.id})`).join('\n');
