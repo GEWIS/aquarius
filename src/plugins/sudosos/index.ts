@@ -7,12 +7,12 @@ import {
 import { PluginApi } from '../../core/plugin-api';
 import { CommandContext } from '../../commands';
 import { env } from '../../env';
-import { emoji, reply } from '../../signal';
 import { isABC, isGuest } from '../../commands/policy';
-import { SignalMessage } from '../../message';
 import { StoredUser } from '../../users';
 import { logger } from '../../core/logger';
 import { SudoSOS } from './sudosos';
+import { SignalMessage } from '../../core/message';
+import { emoji, reply } from '../signal/signal';
 
 const PRODUCTS_GRIMBERGEN = 51;
 const PRODUCTS_VIPER = 468;
@@ -215,7 +215,9 @@ export function registerSudoSOSPlugin(api: PluginApi) {
   commands.registerTyped({
     description: {
       name: 'lint-fix',
-      args: [{ name: 'user', required: false, description: 'User ID (optional if linked)', type: 'user-optional' }] as const,
+      args: [
+        { name: 'user', required: false, description: 'User ID (optional if linked)', type: 'user-optional' },
+      ] as const,
       description: 'Buys a *Grimbergen Tripel* for the user',
     },
     handler: async (ctx) => {
@@ -244,7 +246,9 @@ export function registerSudoSOSPlugin(api: PluginApi) {
   commands.registerTyped({
     description: {
       name: 'meter',
-      args: [{ name: 'userId', required: false, description: 'User ID (optional if linked)', type: 'user-optional' }] as const,
+      args: [
+        { name: 'userId', required: false, description: 'User ID (optional if linked)', type: 'user-optional' },
+      ] as const,
       description: 'Zo kom je een *meter* verder',
     },
     handler: async (ctx) => {
@@ -257,7 +261,9 @@ export function registerSudoSOSPlugin(api: PluginApi) {
   commands.registerTyped({
     description: {
       name: 'brak',
-      args: [{ name: 'userId', required: false, description: 'User ID (optional if linked)', type: 'user-optional' }] as const,
+      args: [
+        { name: 'userId', required: false, description: 'User ID (optional if linked)', type: 'user-optional' },
+      ] as const,
       description: '**Auw**',
     },
     handler: async (ctx) => {

@@ -1,9 +1,6 @@
-// arguments.ts
-
-import { MessageMention, SignalMessage } from '../message';
 import { StoredUser, Users } from '../users';
-
 import { logger } from '../core/logger';
+import { MessageMention, SignalMessage } from '../core/message';
 
 export type CoreArgTypes = {
   string: string;

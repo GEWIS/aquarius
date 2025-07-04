@@ -1,6 +1,6 @@
-import { reply, SignalRpcMessageSource } from '../signal';
-import { isAdmin } from './policy';
-import { CommandContext, CommandHandler, Commands } from './index';
+import { CommandContext, CommandHandler, Commands } from '../../commands';
+import { isAdmin } from '../../commands/policy';
+import { reply, SignalRpcMessageSource } from './signal';
 
 const reloadGroups =
   (source: SignalRpcMessageSource): CommandHandler =>

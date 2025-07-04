@@ -1,10 +1,9 @@
-import fs from 'fs/promises';
+import { MessageContext, MessageSource, SignalMessage } from '../../core/message';
 import { SignalClient } from 'signal-rest-ts';
+import { logger } from '../../core/logger';
+import { env } from '../../env';
 import axios from 'axios';
-import { MessageContext, MessageSource, SignalMessage } from './message';
-import { env } from './env';
-
-import { logger } from './core/logger';
+import fs from 'fs/promises';
 
 export class SignalRpcMessageSource implements MessageSource {
   private readonly apiUrl: string;

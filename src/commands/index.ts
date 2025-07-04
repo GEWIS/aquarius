@@ -1,10 +1,10 @@
 import { AxiosError } from 'axios';
-import { SignalMessage } from '../message';
-import { emoji, reply } from '../signal';
 import { StoredUser, Users } from '../users';
 import { logger } from '../core/logger';
 import { registerGeneral } from './general';
 import { ArgParseError, ArgTuple, ArgumentsRegistry, CommandArg } from './arguments';
+import { SignalMessage } from '../core/message';
+import { emoji, reply } from '../plugins/signal/signal';
 
 // ======== Types ========
 

@@ -1,15 +1,24 @@
 import fs from 'fs/promises';
-import { Commands, CommandHandler, CommandContext } from '../commands';
-import { reply, emoji } from '../signal';
-import { Portainer } from '../portainer';
-import { Stack } from '../portainer.types';
-import { SignalMessage } from '../message';
-import { UPDATE_REQUEST_MESSAGE } from '../index';
-import { env } from '../env';
-import { logger } from '../core/logger';
-import { isCBC } from './policy';
+import { CommandContext, CommandHandler } from '../../commands';
+import { isCBC } from '../../commands/policy';
+import { env } from '../../env';
+import { logger } from '../../core/logger';
+import { PluginApi } from '../../core/plugin-api';
+import { Stack } from './portainer.types';
+import { Portainer } from './portainer';
+import { emoji, reply } from '../signal/signal';
+import { SignalMessage } from '../../core/message';
+import { UPDATE_REQUEST_MESSAGE } from '../signal';
 
-export function registerPortainerCommands(commands: Commands, portainer: Portainer) {
+export function registerPortainerPlugin(api: PluginApi) {
+  const { commands } = api;
+
+  const { PORTAINER_URL, PORTAINER_API_KEY } = env;
+  if (PORTAINER_URL === '' || PORTAINER_API_KEY === '') {
+    logger.warn('Portainer URL or API key not set. Skipping Portainer integration.');
+  }
+  const portainer = new Portainer(PORTAINER_URL, PORTAINER_API_KEY);
+
   const wrap = (fn: CommandHandler): CommandHandler => fn;
 
   commands.register({
