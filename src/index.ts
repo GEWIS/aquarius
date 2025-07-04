@@ -12,6 +12,7 @@ import { SudoSOS } from './sudosos';
 import { registerSudoSOSCommands } from './commands/sudosos';
 import { Users } from './users';
 import { registerUserCommands } from './commands/users';
+import { argumentsRegistry } from './commands/arguments';
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 global.WebSocket = WebSocket;
 
@@ -36,7 +37,7 @@ logger.level = env.LOG_LEVEL || 'info';
 export const UPDATE_REQUEST_MESSAGE = '/app/data/update-request-message.json';
 
 const users = new Users();
-const commands = new Commands(users);
+const commands = new Commands(users, argumentsRegistry);
 registerUserCommands(commands, users);
 
 if (import.meta.url === process.argv[1] || import.meta.url === `file://${process.argv[1]}`) {

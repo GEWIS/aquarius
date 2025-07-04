@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { emoji, reply } from '../signal';
 import { logger } from '../index';
 import { env } from '../env';
-import { isAdmin } from './policy';
+import { isAdmin, isGuest } from './policy';
 import { Command, CommandContext, CommandHandler, Commands } from './index';
 
 export function ping(ctx: CommandContext): Promise<void> {
@@ -18,7 +18,7 @@ export function help(commands: Commands): CommandHandler {
       let message = 'Available commands:\n';
 
       const available: Command[] = [];
-      for (const c of [...commands.commands.values()]) {
+      for (const c of [...commands.getCommands()]) {
         if (c.registered === false || c.policy === undefined || (await c.policy(ctx))) {
           available.push(c);
         }
@@ -189,7 +189,27 @@ export async function logs(ctx: CommandContext): Promise<void> {
   }
 }
 
+const add = (a: number, b: number) => a + b;
+
 export function registerGeneral(commands: Commands) {
+  commands.registerTyped({
+    description: {
+      name: 'add',
+      args: [
+        { name: 'a', required: true, description: 'First number', type: 'number' },
+        { name: 'b', required: true, description: 'Second number', type: 'number' },
+      ],
+      description: 'Add two numbers',
+      aliases: ['a'],
+    },
+    handler: async (ctx) => {
+      const [a, b] = ctx.parsedArgs;
+      await reply(ctx.msg, `${a} + ${b} = ${add(a, b)}`);
+    },
+    registered: true,
+    policy: isGuest,
+  });
+
   commands.register({
     description: {
       name: 'ping',

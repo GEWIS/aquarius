@@ -44,6 +44,30 @@ export class ArgumentsRegistry {
   has(type: string): boolean {
     return this.parsers.has(type);
   }
+
+  async parseArguments<T extends readonly CommandArg[]>(
+    descs: T,
+    rawArgs: string[],
+    ctx: ArgParserContext,
+  ): Promise<ArgTuple<T>> {
+    const out: unknown[] = [];
+    for (let i = 0; i < descs.length; i++) {
+      const def = descs[i];
+      const raw = rawArgs[i];
+      if (raw == null) {
+        if (def.required) throw new ArgParseError(`Missing required argument: ${def.name}`);
+        out.push(undefined);
+        continue;
+      }
+      const parser = this.get(def.type);
+      try {
+        out.push(await parser(raw, ctx));
+      } catch (e) {
+        throw new ArgParseError(`Invalid value for "${def.name}": ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    return out as ArgTuple<T>;
+  }
 }
 
 export const argumentsRegistry = new ArgumentsRegistry();
@@ -61,14 +85,14 @@ argumentsRegistry.register('uuid', async (raw) => {
 /**
  * An argument descriptor for a command.
  */
-export type CommandArgDesc<TType extends string = ArgTypeName> = {
+export type CommandArg<TType extends string = ArgTypeName> = {
   name: string;
   type: TType;
   required: boolean;
   description: string;
 };
 
-export type ArgTuple<T extends readonly CommandArgDesc[]> = {
+export type ArgTuple<T extends readonly CommandArg[]> = {
   [K in keyof T]: T[K] extends { type: infer S } ? (S extends keyof CoreArgTypes ? CoreArgTypes[S] : unknown) : never;
 };
 
