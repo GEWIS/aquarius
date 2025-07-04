@@ -139,7 +139,7 @@ export async function changelog(ctx: CommandContext): Promise<void> {
 
   try {
     const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
-      headers: { 'Accept': 'application/vnd.github.v3+json' }
+      headers: { Accept: 'application/vnd.github.v3+json' },
     });
 
     if (!res.ok) {
@@ -151,10 +151,10 @@ export async function changelog(ctx: CommandContext): Promise<void> {
       name: string;
       tag_name: string;
       body: string;
-    } = await res.json() as { name: string; tag_name: string; body: string };
+    } = (await res.json()) as { name: string; tag_name: string; body: string };
     const title = data.name || data.tag_name || 'Latest Release';
-    const rawBody = (data.body) || '(No description)';
-    const body = rawBody.trim().slice(0, 1900)
+    const rawBody = data.body || '(No description)';
+    const body = rawBody.trim().slice(0, 1900);
 
     let msg = `**${title}**\n\n${body}`;
     if (body.length >= 1900) {
