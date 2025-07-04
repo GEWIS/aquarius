@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 import {
+  BaseProductResponse,
   ContainerWithProductsResponse,
   PointOfSaleWithContainersResponse,
   ProductResponse,
@@ -347,10 +348,58 @@ export function registerSudoSOSModule(api: ModuleApi) {
       await emoji(ctx.msg, '🔄');
       const report = await sudosos.getReport(user.sudosId);
 
+      const summarized: Record<number, [number, product: BaseProductResponse, count: number]> = {};
+      report.data.products?.forEach((product) => {
+        const pid = product.product.id;
+        const amount = product.totalInclVat.amount;
+        if (summarized[pid]) {
+          summarized[pid][0] += amount;
+          summarized[pid][2] += product.count;
+        } else {
+          summarized[pid] = [amount, product.product, product.count];
+        }
+      });
+
+      const bestProduct = Object.entries(summarized)
+        .sort((a, b) => {
+          const left = b[1][0];
+          const right = a[1][0];
+          return left - right;
+        })
+        .slice(0, 1)[0][1];
+
+      const mostOftenPurchased = Object.entries(summarized)
+        .sort((a, b) => {
+          const left = b[1][2];
+          const right = a[1][2];
+          return left - right;
+        })
+        .slice(0, 1)[0][1];
+
+      const sudusosUser = await sudosos.getUserById(user.sudosId);
+      assert(sudusosUser, 'User not found');
+
+      const firstTransaction = await sudosos.getFirstTransaction(sudusosUser.id);
+      assert(firstTransaction.createdAt, 'No transactions found');
+      const creation = new Date(firstTransaction.createdAt);
+      const daysSince = (new Date().getTime() - creation.getTime()) / 1000 / 60 / 60 / 24;
+      const perday = report.totalInclVat.amount / daysSince;
+
       await emoji(ctx.msg, '💰');
       const totalExpenses = report.totalInclVat.amount;
 
-      await reply(ctx.msg, `[💰] You have spent a total of ${formatEuro(totalExpenses)}`);
+      let msg = `[💰] You have spent a total of ${formatEuro(totalExpenses)} since ${creation.toLocaleDateString()}.\n*This is an average of ${formatEuro(perday)} per day.*`;
+      if (bestProduct) {
+        const bp = bestProduct[1];
+        msg += `\n\nYou spent the most on *${bp.name}* for ${formatEuro(bestProduct[0])} (purchased ${bestProduct[2]} times).`;
+      }
+
+      if (mostOftenPurchased && mostOftenPurchased[1].id !== bestProduct?.[1].id) {
+        const mop = mostOftenPurchased[1];
+        msg += `\n\n...but you bought *${mop.name}* most often (${mostOftenPurchased[2]} times), which is ${formatEuro(mostOftenPurchased[0])}.`;
+      }
+
+      await reply(ctx.msg, msg);
     },
     policy: isGuest,
   });

@@ -1,9 +1,11 @@
+import assert from 'node:assert';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
 import {
   AuthenticateApi,
   BalanceApi,
   BalanceResponse,
   BannersApi,
+  BaseTransactionResponse,
   Configuration,
   ContainersApi,
   DebtorsApi,
@@ -161,6 +163,42 @@ export class SudoSOS {
 
   async getReport(userId: number, start = new Date('2020-01-01'), end = new Date()): Promise<ReportResponse> {
     return (await this.apiService.user.getUsersPurchasesReport(userId, start.toISOString(), end.toISOString())).data;
+  }
+
+  async getFirstTransaction(userId: number): Promise<BaseTransactionResponse> {
+    const pagination = (
+      await this.apiService.transaction.getAllTransactions(
+        userId,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        1,
+      )
+    ).data._pagination;
+    assert(pagination.count > 0, 'No transactions found');
+
+    return (
+      await this.apiService.transaction.getAllTransactions(
+        userId,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        1,
+        pagination.count - 1,
+      )
+    ).data.records[0];
   }
 }
 
