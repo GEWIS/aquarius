@@ -133,27 +133,23 @@ export function registerSudoSOSModule(api: ModuleApi) {
     policy: isABC || isABC,
   });
 
-  commands.register({
+  commands.registerTyped({
     description: {
       name: 'sudosos-pos-list',
       args: [
-        { name: 'take', required: false, description: 'Number of records to take' },
-        { name: 'skip', required: false, description: 'Number of records to skip' },
-      ],
+        { name: 'take', required: false, description: 'Number of records to take', type: 'number' },
+        { name: 'skip', required: false, description: 'Number of records to skip', type: 'number' },
+      ] as const,
       description: 'List all Points of sale',
       aliases: ['pos-list', 'posl', 'pl'],
     },
-    handler: async (ctx: CommandContext) => {
-      const [take, skip] = ctx.args.map((s) => parseInt(s));
-      if (isNaN(take) || isNaN(skip)) {
-        await reply(
-          ctx.msg,
-          `Invalid arguments: ${ctx.args.map((a) => a.toString()).join(' ')}.\n Usage: sudosos-pos-list [take] [skip]`,
-        );
-        return;
-      }
+    handler: async (ctx) => {
+      const [take, skip] = ctx.parsedArgs;
 
-      const { _pagination, records } = await sudosos.getPos(take, skip);
+      let t = take ?? 10;
+      let s = skip ?? 0;
+
+      const { _pagination, records } = await sudosos.getPos(t, s);
       const msg = records.map((p) => `• *${p.name}* (${p.id})`).join('\n');
       // const msg = pos.data.map((p) => `• ${p.name} (${p.id})`).join('\n');
       await reply(ctx.msg, `Points of sale (${_pagination.skip}, ${_pagination.take}/${_pagination.count}}):\n${msg}`);
@@ -316,8 +312,33 @@ export function registerSudoSOSModule(api: ModuleApi) {
     },
     handler: async (ctx) => {
       const [user] = ctx.parsedArgs;
-      await buy(ctx, PRODUCT_LEREN, 1, 1, user);
+      await buy(ctx, PRODUCT_LEREN, 2, 1, user);
     },
     policy: isGuest,
   });
+
+  const leren = async (msg: SignalMessage) => {
+    const raw = msg.rawMessage.envelope.dataMessage.message;
+    const regexLeer = /l+e{2,}r+/i;
+    const regexLeren = /l+e+r+e+n+/i;
+
+    if (regexLeer.test(raw) || regexLeren.test(raw)) {
+      const learnCommand = commands.getCommand('leren');
+      assert(learnCommand, 'leren command not found');
+
+      await reply(msg, 'LEEEEERREEEEEN?????');
+      await emoji(msg, '😋');
+      await learnCommand.handler({
+        msg,
+        command: learnCommand,
+        args: [],
+        callerId: msg.rawMessage.envelope.sourceUuid,
+        user: undefined,
+      });
+    }
+  };
+
+  return {
+    leren,
+  };
 }

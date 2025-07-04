@@ -213,5 +213,8 @@ function formatUsage(args: { name: string; required: boolean }[]) {
 }
 
 export function isReaction(msg: SignalMessage) {
-  return msg.rawMessage.envelope.dataMessage.reaction !== undefined && msg.rawMessage.envelope.dataMessage.reaction.targetAuthorUuid === msg.rawMessage.account;
+  return (
+    msg.rawMessage.envelope.dataMessage.reaction !== undefined &&
+    msg.rawMessage.envelope.dataMessage.reaction.targetAuthorNumber === msg.rawMessage.account
+  );
 }

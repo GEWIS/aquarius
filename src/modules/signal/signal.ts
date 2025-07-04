@@ -128,12 +128,12 @@ export async function deleteEmoji(ctx: SignalMessage, reaction: ReactionReq) {
     timestamp: number;
   } = {
     reaction: reaction.reaction,
-    recipient: reaction.recipient,
+    recipient: ctx.group || ctx.account,
     target_author: reaction.target_author,
     timestamp: reaction.timestamp,
   };
   const apiUrl = env.SIGNAL_CLI_API;
-  await axios
+  return axios
     .delete(`${apiUrl}/v1/reactions/${ctx.account}`, {
       data: req,
     })

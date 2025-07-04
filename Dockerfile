@@ -1,9 +1,17 @@
+FROM node:20-bookworm AS builder
+
+WORKDIR /app
+COPY yarn.lock .
+COPY package.json .
+
+RUN yarn install --frozen-lockfile
+
 FROM node:20-bookworm
 
 WORKDIR /app
 COPY . .
+COPY --from=builder /app/node_modules ./node_modules
 
-RUN yarn install --frozen-lockfile
 RUN yarn build
 
 ARG DOCKER_VERSION
