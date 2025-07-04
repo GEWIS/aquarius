@@ -8,6 +8,15 @@ export interface MessageMention {
   length: number;
 }
 
+export interface Reaction {
+  emoji: string;
+  targetAuthor: string;
+  targetAuthorNumber: string;
+  targetAuthorUuid: string;
+  targetSentTimestamp: number;
+  isRemove: boolean;
+}
+
 interface RawMessage {
   envelope: {
     source: string;
@@ -23,6 +32,7 @@ interface RawMessage {
       message: string;
       expiresInSeconds: number;
       viewOnce: boolean;
+      reaction?: Reaction;
       mentions?: MessageMention[];
       groupInfo?: {
         groupId: string;

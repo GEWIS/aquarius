@@ -50,13 +50,7 @@ export class SignalRpcMessageSource implements MessageSource {
           const group = rawGroupId ? this.groupsCache.find((g) => g.internal_id === rawGroupId)?.id : undefined;
 
           const extendedContext: SignalMessage = { ...context, group };
-
-          // check if message mentions bot
-          const mentions = extendedContext.rawMessage.envelope.dataMessage.mentions;
-          const mention = mentions?.find((m) => m.number === account) !== undefined;
-          if (mention) {
-            await this.cb(extendedContext);
-          }
+          await this.cb(extendedContext);
         } catch (e) {
           console.error(e);
         }
@@ -92,14 +86,14 @@ export async function reply(ctx: SignalMessage, message: string) {
   }
 }
 
-export interface Reaction {
+export interface ReactionReq {
   reaction: string;
   recipient: string;
   target_author: string;
   timestamp: number;
 }
 
-export async function react(account: string, reaction: Reaction) {
+export async function react(account: string, reaction: ReactionReq) {
   const apiUrl = env.SIGNAL_CLI_API;
   await axios
     .post(`${apiUrl}/v1/reactions/${account}`, reaction, {
@@ -126,10 +120,30 @@ export async function emoji(ctx: SignalMessage, emoji: string) {
   });
 }
 
+export async function deleteEmoji(ctx: SignalMessage, reaction: ReactionReq) {
+  const req: {
+    reaction: string;
+    recipient: string;
+    target_author: string;
+    timestamp: number;
+  } = {
+    reaction: reaction.reaction,
+    recipient: reaction.recipient,
+    target_author: reaction.target_author,
+    timestamp: reaction.timestamp,
+  };
+  const apiUrl = env.SIGNAL_CLI_API;
+  await axios
+    .delete(`${apiUrl}/v1/reactions/${ctx.account}`, {
+      data: req,
+    })
+    .catch((e) => logger.error(e));
+}
+
 export async function sendSavedReaction(filePath: string) {
   try {
-    const saved: { r: Reaction; account: string } = JSON.parse(await fs.readFile(filePath, 'utf-8')) as {
-      r: Reaction;
+    const saved: { r: ReactionReq; account: string } = JSON.parse(await fs.readFile(filePath, 'utf-8')) as {
+      r: ReactionReq;
       account: string;
     };
     await react(saved.account, saved.r);

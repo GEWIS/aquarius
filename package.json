@@ -9,7 +9,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "src/tsx index.ts",
+    "start": "tsx src/index.ts",
     "test": "vitest run",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",

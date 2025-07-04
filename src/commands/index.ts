@@ -39,6 +39,12 @@ export type TypedContext<TArgs extends readonly CommandArg[]> = CommandContext &
 
 export type TypedCommandHandler<TArgs extends readonly CommandArg[]> = (ctx: TypedContext<TArgs>) => Promise<void>;
 
+export interface Saga {
+  ttl: number;
+  messages: SignalMessage[];
+  lastMessage?: SignalMessage;
+}
+
 // ======== Command Registry Class ========
 
 export class Commands {
@@ -204,4 +210,8 @@ export class Commands {
  */
 function formatUsage(args: { name: string; required: boolean }[]) {
   return args.map((a) => (a.required ? `<${a.name}>` : `[${a.name}]`)).join(' ');
+}
+
+export function isReaction(msg: SignalMessage) {
+  return msg.rawMessage.envelope.dataMessage.reaction !== undefined && msg.rawMessage.envelope.dataMessage.reaction.targetAuthorUuid === msg.rawMessage.account;
 }

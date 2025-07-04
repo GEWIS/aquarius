@@ -17,6 +17,7 @@ import { SudoSOS } from './sudosos';
 const PRODUCTS_GRIMBERGEN = 51;
 const PRODUCTS_VIPER = 468;
 const PRODUCTS_METER = 80;
+const PRODUCT_LEREN = 75;
 const PRODUCTS_AQUARIUS = 244;
 
 export function registerSudoSOSModule(api: ModuleApi) {
@@ -301,6 +302,21 @@ export function registerSudoSOSModule(api: ModuleApi) {
       const balance = await sudosos.getBalance(user.sudosId);
       await emoji(ctx.msg, '💰');
       await reply(ctx.msg, `[💰] ${sudososUser.firstName} (${sudososUser.id}) has €${balance.amount.amount / 100}`);
+    },
+    policy: isGuest,
+  });
+
+  commands.registerTyped({
+    description: {
+      name: 'leren',
+      args: [
+        { name: 'user', required: false, description: 'User that is learning', type: 'user-optional', rest: false },
+      ] as const,
+      description: 'Leren',
+    },
+    handler: async (ctx) => {
+      const [user] = ctx.parsedArgs;
+      await buy(ctx, PRODUCT_LEREN, 1, 1, user);
     },
     policy: isGuest,
   });
