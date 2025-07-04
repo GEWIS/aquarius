@@ -434,9 +434,9 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
-"@sudosos/sudosos-client@github:GEWIS/sudosos-client#693f5f138073f342ad01b029452d8db5ebffaf07":
+"@sudosos/sudosos-client@git+https://github.com/GEWIS/sudosos-client.git#693f5f138073f342ad01b029452d8db5ebffaf07":
   version "1.1.2"
-  resolved "https://codeload.github.com/GEWIS/sudosos-client/tar.gz/693f5f138073f342ad01b029452d8db5ebffaf07"
+  resolved "git+https://github.com/GEWIS/sudosos-client.git#693f5f138073f342ad01b029452d8db5ebffaf07"
   dependencies:
     axios "^1.6.3"
     swagger-axios-codegen "^0.16.4"
