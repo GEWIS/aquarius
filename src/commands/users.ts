@@ -222,4 +222,17 @@ export function registerUserCommands(commands: Commands, users: Users) {
       });
     },
   });
+
+  commands.registerTyped({
+    description: {
+      name: 'user',
+      args: [{ name: 'user', required: true, description: 'User to get info for', type: 'user' }],
+      description: 'Get info about a user',
+    },
+    handler: async (ctx) => {
+      const [user] = ctx.parsedArgs;
+      await reply(ctx.msg, `${user.name} (${user.number}) → ${user.sudosId}`);
+    },
+    policy: isAdmin,
+  });
 }

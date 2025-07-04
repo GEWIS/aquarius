@@ -4,7 +4,7 @@ import { emoji, reply } from '../signal';
 import { logger } from '../index';
 import { StoredUser, Users } from '../users';
 import { registerGeneral } from './general';
-import {ArgParseError, ArgTuple, ArgumentsRegistry, CommandArg} from './arguments';
+import { ArgParseError, ArgTuple, ArgumentsRegistry, CommandArg } from './arguments';
 
 // ======== Types ========
 

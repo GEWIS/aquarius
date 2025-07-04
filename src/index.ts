@@ -36,11 +36,11 @@ logger.level = env.LOG_LEVEL || 'info';
 
 export const UPDATE_REQUEST_MESSAGE = '/app/data/update-request-message.json';
 
-const users = new Users();
-const commands = new Commands(users, argumentsRegistry);
-registerUserCommands(commands, users);
+function main() {
+  const users = new Users();
+  const commands = new Commands(users, argumentsRegistry);
+  registerUserCommands(commands, users);
 
-if (import.meta.url === process.argv[1] || import.meta.url === `file://${process.argv[1]}`) {
   const source = new SignalRpcMessageSource(env.SIGNAL_CLI_API);
 
   const { PORTAINER_URL, PORTAINER_API_KEY } = env;
@@ -72,4 +72,8 @@ if (import.meta.url === process.argv[1] || import.meta.url === `file://${process
   void sendSavedReaction(UPDATE_REQUEST_MESSAGE);
 
   logger.info('Bot started.');
+}
+
+if (import.meta.url === process.argv[1] || import.meta.url === `file://${process.argv[1]}`) {
+  main();
 }

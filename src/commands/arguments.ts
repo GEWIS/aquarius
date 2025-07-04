@@ -1,12 +1,14 @@
 // arguments.ts
 
-import { SignalMessage } from '../message';
-import { Users } from '../users';
+import { MessageMention, SignalMessage } from '../message';
+import { StoredUser, Users } from '../users';
+import { logger } from '../index';
 
 export type CoreArgTypes = {
   string: string;
   number: number;
   uuid: string;
+  user: StoredUser;
 };
 
 export type ArgTypeName = keyof CoreArgTypes | (string & {});
@@ -14,6 +16,8 @@ export type ArgTypeName = keyof CoreArgTypes | (string & {});
 export interface ArgParserContext {
   message?: SignalMessage;
   users?: Users;
+  argIndex?: number;
+  args?: string[];
   [key: string]: unknown;
 }
 
@@ -61,7 +65,7 @@ export class ArgumentsRegistry {
       }
       const parser = this.get(def.type);
       try {
-        out.push(await parser(raw, ctx));
+        out.push(await parser(raw, { ...ctx, argIndex: i, args: rawArgs }));
       } catch (e) {
         throw new ArgParseError(`Invalid value for "${def.name}": ${e instanceof Error ? e.message : String(e)}`);
       }
@@ -78,8 +82,37 @@ argumentsRegistry.register('number', async (raw) => {
   if (isNaN(n)) throw new Error('Not a valid number');
   return Promise.resolve(n);
 });
-argumentsRegistry.register('uuid', async (raw) => {
-  return Promise.resolve(raw);
+
+export function isMention(str: string) {
+  return str === '￼';
+}
+
+argumentsRegistry.register('user', (raw, ctx) => {
+  if (!ctx.users || !ctx.message || !ctx.args) throw new ArgParseError('User context or message missing');
+  const mentions: MessageMention[] = ctx.message.rawMessage.envelope.dataMessage.mentions ?? [];
+  const index = ctx.argIndex ?? 0;
+
+  // Build a list of which arguments are 'mention fillers'
+  const mentionArgs: number[] = [];
+  for (let i = 0; i < ctx.args.length; i++) {
+    logger.trace('Checking arg', ctx.args[i], 'for mention', isMention(ctx.args[i]));
+    if (isMention(ctx.args[i])) mentionArgs.push(i);
+  }
+
+  const realMentions = mentions.slice(1);
+
+  const mentionIndex = mentionArgs.indexOf(index);
+  if (mentionIndex !== -1 && realMentions[mentionIndex]) {
+    const uuid = realMentions[mentionIndex].uuid;
+    const user = ctx.users.getUser(uuid);
+    if (user) return user;
+  }
+
+  // If not, fallback to direct lookup by raw (uuid/number/etc)
+  const user = ctx.users.getUser(raw);
+  if (user) return user;
+
+  throw new ArgParseError(`Could not resolve user for argument "${raw}"`);
 });
 
 /**

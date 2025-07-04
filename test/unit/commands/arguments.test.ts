@@ -18,11 +18,6 @@ describe('ArgumentsRegistry', () => {
         await expect(parser('not-a-number', {})).rejects.toThrow(/not a valid number/i);
     });
 
-    it('parses a uuid', async () => {
-        const parser = argumentsRegistry.get('uuid');
-        expect(await parser('some-uuid', {})).toBe('some-uuid');
-    });
-
     it('registers and parses a custom type', async () => {
         const custom = new ArgumentsRegistry();
         custom.register('foo', (raw) => raw.toUpperCase());

@@ -198,7 +198,7 @@ export function registerGeneral(commands: Commands) {
       args: [
         { name: 'a', required: true, description: 'First number', type: 'number' },
         { name: 'b', required: true, description: 'Second number', type: 'number' },
-      ],
+      ] as const,
       description: 'Add two numbers',
       aliases: ['a'],
     },
