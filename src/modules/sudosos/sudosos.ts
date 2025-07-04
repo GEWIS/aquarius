@@ -36,7 +36,6 @@ import {
 } from '@sudosos/sudosos-client';
 import axios, { AxiosHeaders, AxiosInstance, AxiosResponse } from 'axios';
 import { env } from '../../env';
-import {logger} from "../../core/logger";
 
 let token: string = '';
 let tokenExpiry: number = 0;
