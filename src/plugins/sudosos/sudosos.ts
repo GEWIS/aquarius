@@ -1,40 +1,40 @@
+import { jwtDecode, JwtPayload } from 'jwt-decode';
 import {
   AuthenticateApi,
   BalanceApi,
+  BalanceResponse,
   BannersApi,
-  VouchergroupsApi,
   Configuration,
   ContainersApi,
+  DebtorsApi,
   FilesApi,
   InvoicesApi,
+  PaginatedPointOfSaleResponse,
   PayoutRequestsApi,
   PointofsaleApi,
+  PointOfSaleWithContainersResponse,
   ProductCategoriesApi,
   ProductsApi,
   RbacApi,
+  RevisionRequest,
   RootApi,
+  SellerPayoutsApi,
+  ServerSettingsApi,
+  ServerStatusResponse,
   StripeApi,
+  SubTransactionRequest,
+  TransactionRequest,
+  TransactionResponse,
   TransactionsApi,
   TransfersApi,
+  UserResponse,
   UsersApi,
   VatGroupsApi,
-  DebtorsApi,
-  SellerPayoutsApi,
+  VouchergroupsApi,
   WriteoffsApi,
-  ServerStatusResponse,
-  ServerSettingsApi,
-  PaginatedPointOfSaleResponse,
-  PointOfSaleWithContainersResponse,
-  TransactionResponse,
-  RevisionRequest,
-  SubTransactionRequest,
-  UserResponse,
-  BalanceResponse,
 } from '@sudosos/sudosos-client';
-import axios, { AxiosHeaders, AxiosResponse, AxiosInstance } from 'axios';
-import { TransactionRequest } from '@sudosos/sudosos-client/src/api';
-import { jwtDecode, JwtPayload } from 'jwt-decode';
-import { env } from './env';
+import axios, { AxiosHeaders, AxiosInstance, AxiosResponse } from 'axios';
+import { env } from '../../env';
 
 let token: string = '';
 let tokenExpiry: number = 0;

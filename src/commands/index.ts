@@ -1,8 +1,8 @@
 import { AxiosError } from 'axios';
 import { SignalMessage } from '../message';
 import { emoji, reply } from '../signal';
-import { logger } from '../index';
 import { StoredUser, Users } from '../users';
+import { logger } from '../core/logger';
 import { registerGeneral } from './general';
 import { ArgParseError, ArgTuple, ArgumentsRegistry, CommandArg } from './arguments';
 
@@ -33,7 +33,7 @@ export type CommandDescription = {
   aliases?: string[];
 };
 
-export type TypedContext<TArgs extends readonly CommandArg[]> = Omit<CommandContext, 'args'> & {
+export type TypedContext<TArgs extends readonly CommandArg[]> = CommandContext & {
   parsedArgs: ArgTuple<TArgs>;
 };
 

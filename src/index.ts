@@ -1,6 +1,5 @@
 // @ts-expect-error WebSocket is not defined in the global scope
 import WebSocket from 'ws';
-import log4js from 'log4js';
 import { sendSavedReaction, SignalRpcMessageSource } from './signal';
 import { SignalMessage } from './message';
 import { Commands } from './commands';
@@ -8,37 +7,25 @@ import { Portainer } from './portainer';
 import { registerCommands } from './commands/signal';
 import { registerPortainerCommands } from './commands/portainer';
 import { env } from './env';
-import { SudoSOS } from './sudosos';
-import { registerSudoSOSCommands } from './commands/sudosos';
 import { Users } from './users';
 import { registerUserCommands } from './commands/users';
 import { argumentsRegistry } from './commands/arguments';
+import { registerSudoSOSPlugin } from './plugins/sudosos';
+import { logger } from './core/logger';
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 global.WebSocket = WebSocket;
-
-log4js.configure({
-  appenders: {
-    out: { type: 'stdout' },
-    file: {
-      type: 'file',
-      filename: 'app/data/app.log',
-      maxLogSize: 1048576, // 1 MB
-      backups: 3,
-      compress: false,
-    },
-  },
-  categories: {
-    default: { appenders: ['out', 'file'], level: env.LOG_LEVEL || 'info' },
-  },
-});
-export const logger = log4js.getLogger('🤖');
-logger.level = env.LOG_LEVEL || 'info';
 
 export const UPDATE_REQUEST_MESSAGE = '/app/data/update-request-message.json';
 
 function main() {
   const users = new Users();
   const commands = new Commands(users, argumentsRegistry);
+  const api = {
+    commands,
+    argumentsRegistry,
+    users,
+  };
+
   registerUserCommands(commands, users);
 
   const source = new SignalRpcMessageSource(env.SIGNAL_CLI_API);
@@ -52,16 +39,9 @@ function main() {
     registerPortainerCommands(commands, portainer);
   }
 
-  const { SUDOSOS_API_URL, SUDOSOS_API_KEY, SUDOSOS_USER_ID } = env;
-  if (SUDOSOS_API_URL === '' || SUDOSOS_API_KEY === '' || SUDOSOS_USER_ID === '') {
-    logger.warn('SudoSOS API URL, API key or user ID not set. Skipping SudoSOS integration.');
-  } else {
-    const sudosos = new SudoSOS(SUDOSOS_API_URL);
-    logger.info('SudoSOS initialized');
-    registerSudoSOSCommands(commands, sudosos, users);
-  }
-
   registerCommands(commands, source);
+
+  registerSudoSOSPlugin(api);
 
   source.onMessage(async (ctx: SignalMessage) => {
     await commands.execute(ctx);

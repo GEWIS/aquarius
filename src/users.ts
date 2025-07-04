@@ -3,7 +3,8 @@ import path from 'path';
 import { SignalMessage } from './message';
 import { emoji, reply } from './signal';
 import { env } from './env';
-import { logger } from './index';
+
+import { logger } from './core/logger';
 
 export interface StoredUser {
   uuid: string;

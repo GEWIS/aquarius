@@ -1,0 +1,301 @@
+import assert from 'node:assert';
+import {
+  ContainerWithProductsResponse,
+  PointOfSaleWithContainersResponse,
+  ProductResponse,
+} from '@sudosos/sudosos-client';
+import { PluginApi } from '../../core/plugin-api';
+import { CommandContext } from '../../commands';
+import { env } from '../../env';
+import { emoji, reply } from '../../signal';
+import { isABC, isGuest } from '../../commands/policy';
+import { SignalMessage } from '../../message';
+import { StoredUser } from '../../users';
+import { logger } from '../../core/logger';
+import { SudoSOS } from './sudosos';
+
+const PRODUCTS_GRIMBERGEN = 51;
+const PRODUCTS_VIPER = 468;
+const PRODUCTS_METER = 80;
+const PRODUCTS_AQUARIUS = 244;
+
+export function registerSudoSOSPlugin(api: PluginApi) {
+  const { commands, users } = api;
+
+  const { SUDOSOS_API_URL, SUDOSOS_API_KEY, SUDOSOS_USER_ID } = env;
+  if (SUDOSOS_API_URL === '' || SUDOSOS_API_KEY === '' || SUDOSOS_USER_ID === '') {
+    logger.warn('SudoSOS API URL, API key or user ID not set. Skipping SudoSOS integration.');
+  }
+
+  const sudosos = new SudoSOS(SUDOSOS_API_URL);
+  logger.info('SudoSOS initialized');
+
+  const buyProduct = async (
+    msg: SignalMessage,
+    pos: PointOfSaleWithContainersResponse,
+    productId: number,
+    userId: number,
+    times: number = 1,
+  ) => {
+    const user = await sudosos.getUserById(userId);
+    if (!user) {
+      await emoji(msg, '❌');
+      await reply(msg, `User ${userId} not found`);
+      return;
+    }
+
+    let p: { c: ContainerWithProductsResponse; p: ProductResponse } | null = null;
+    for (const container of pos.containers) {
+      for (const product of container.products) {
+        if (product.id === productId) {
+          p = {
+            c: container,
+            p: product,
+          };
+          break;
+        }
+      }
+    }
+
+    if (!p) {
+      await emoji(msg, '❌');
+      await reply(msg, `Product ${productId} not found`);
+      return;
+    }
+
+    const t = await sudosos.makeTransaction(
+      { id: pos.id, revision: pos.revision },
+      { container: { id: p.c.id, revision: p.c.revision ?? 0 }, to: p.c.owner.id },
+      { id: p.p.id, revision: p.p.revision },
+      times,
+      userId,
+      p.p.priceInclVat.amount,
+    );
+
+    const amount = times !== 1 ? times : 'a';
+    await emoji(msg, '🍺');
+    await reply(
+      msg,
+      `[🍺] Bought ${amount} *${p.p.name}* for ${user.firstName} (${user.id}), total price: €${t.totalPriceInclVat.amount / 100}`,
+    );
+  };
+
+  const buy = async (ctx: CommandContext, productId: number, posId: number, amount: number, user: StoredUser) => {
+    await emoji(ctx.msg, '🔄');
+
+    if (!user.sudosId) {
+      await emoji(ctx.msg, '❌');
+      await reply(ctx.msg, `SudoSOS user ID missing.\nsee *help link* to link your SudoSOS account.`);
+      return;
+    }
+
+    const pos = await sudosos.getPosById(posId);
+    await buyProduct(ctx.msg, pos, productId, user.sudosId, amount);
+  };
+
+  commands.register({
+    description: {
+      name: 'sudosos',
+      args: [],
+      description: 'Show SudoSOS status',
+    },
+    handler: async (ctx: CommandContext) => {
+      const status = await sudosos.getStatus();
+      const emoji = status.maintenanceMode ? '🚫' : '✅';
+      await reply(
+        ctx.msg,
+        `[${emoji}] **SudoSOS**\n ${status.maintenanceMode ? 'Maintenance mode enabled' : 'Maintenance mode disabled'}`,
+      );
+    },
+    policy: isGuest,
+  });
+
+  commands.register({
+    description: {
+      name: 'maintenance',
+      args: [{ name: 'enable', required: true, description: 'Enable maintenance mode' }],
+      description: 'Toggle SudoSOS maintenance mode',
+    },
+    handler: async (ctx: CommandContext) => {
+      await emoji(ctx.msg, '🔄');
+      const enable = ctx.args[0].toLowerCase() === 'true';
+
+      const status = await sudosos.getStatus();
+      if (status.maintenanceMode === enable) {
+        await emoji(ctx.msg, '✅');
+        return;
+      }
+
+      await sudosos.setMaintenanceMode(enable);
+      await emoji(ctx.msg, '✅');
+    },
+    policy: isABC || isABC,
+  });
+
+  commands.register({
+    description: {
+      name: 'sudosos-pos-list',
+      args: [
+        { name: 'take', required: false, description: 'Number of records to take' },
+        { name: 'skip', required: false, description: 'Number of records to skip' },
+      ],
+      description: 'List all Points of sale',
+      aliases: ['pos-list', 'posl', 'pl'],
+    },
+    handler: async (ctx: CommandContext) => {
+      const [take, skip] = ctx.args.map((s) => parseInt(s));
+      if (isNaN(take) || isNaN(skip)) {
+        await reply(
+          ctx.msg,
+          `Invalid arguments: ${ctx.args.map((a) => a.toString()).join(' ')}.\n Usage: sudosos-pos-list [take] [skip]`,
+        );
+        return;
+      }
+
+      const { _pagination, records } = await sudosos.getPos(take, skip);
+      const msg = records.map((p) => `• *${p.name}* (${p.id})`).join('\n');
+      // const msg = pos.data.map((p) => `• ${p.name} (${p.id})`).join('\n');
+      await reply(ctx.msg, `Points of sale (${_pagination.skip}, ${_pagination.take}/${_pagination.count}}):\n${msg}`);
+    },
+    policy: isGuest,
+  });
+
+  commands.register({
+    description: {
+      name: 'sudosos-pos',
+      args: [{ name: 'id', required: true, description: 'Point of sale ID' }],
+      description: 'Get Point of sale details',
+      aliases: ['pos', 'p'],
+    },
+    handler: async (ctx: CommandContext) => {
+      const id = parseInt(ctx.args[0]);
+      if (isNaN(id)) {
+        await reply(ctx.msg, 'Invalid arguments. Usage: sudosos-pos [id]');
+        return;
+      }
+
+      const pos = await sudosos.getPosById(id);
+      const products = [];
+      const seen = new Set();
+      for (const container of pos.containers) {
+        for (const product of container.products) {
+          if (!seen.has({ id: product.id, revision: product.revision })) {
+            products.push(product);
+            seen.add({ id: product.id, revision: product.revision });
+          }
+        }
+      }
+
+      const msg = products.map((p) => `• *${p.name}* (${p.id})`).join('\n');
+      await reply(ctx.msg, `Point of sale ${pos.name} (${pos.id}):\n${msg}`);
+    },
+    policy: isGuest,
+  });
+
+  commands.registerTyped({
+    description: {
+      name: 'buy',
+      args: [
+        { name: 'productId', required: true, description: 'Product ID to buy', type: 'number' },
+        { name: 'posId', required: true, description: 'Point of Sale ID', type: 'number' },
+        { name: 'amount', required: false, description: 'Amount (default: 1)', type: 'number' },
+        { name: 'user', required: false, description: 'User ID (optional if linked)', type: 'user-optional' },
+      ] as const,
+      description: 'Buy any product for any user at any POS',
+    },
+    handler: async (ctx) => {
+      const [productId, posId, amount, user] = ctx.parsedArgs;
+      await buy(ctx, productId, posId, amount, user);
+    },
+    policy: isGuest,
+  });
+
+  // --- Aliases with Custom Descriptions ---
+
+  commands.registerTyped({
+    description: {
+      name: 'lint-fix',
+      args: [{ name: 'user', required: false, description: 'User ID (optional if linked)', type: 'user-optional' }] as const,
+      description: 'Buys a *Grimbergen Tripel* for the user',
+    },
+    handler: async (ctx) => {
+      const [user] = ctx.parsedArgs;
+      await buy(ctx, PRODUCTS_GRIMBERGEN, 1, 1, user);
+    },
+    policy: isGuest,
+  });
+
+  commands.registerTyped({
+    description: {
+      name: 'classic',
+      args: [
+        { name: 'amount', required: true, description: 'Amount to buy', type: 'number' },
+        { name: 'userId', required: false, description: 'User ID (optional if linked)', type: 'user-optional' },
+      ] as const,
+      description: 'Buys a *Classic* for the user',
+    },
+    handler: async (ctx) => {
+      const [amount, user] = ctx.parsedArgs;
+      await buy(ctx, PRODUCTS_VIPER, 1, amount, user);
+    },
+    policy: isGuest,
+  });
+
+  commands.registerTyped({
+    description: {
+      name: 'meter',
+      args: [{ name: 'userId', required: false, description: 'User ID (optional if linked)', type: 'user-optional' }] as const,
+      description: 'Zo kom je een *meter* verder',
+    },
+    handler: async (ctx) => {
+      const [user] = ctx.parsedArgs;
+      await buy(ctx, PRODUCTS_METER, 2, 1, user);
+    },
+    policy: isGuest,
+  });
+
+  commands.registerTyped({
+    description: {
+      name: 'brak',
+      args: [{ name: 'userId', required: false, description: 'User ID (optional if linked)', type: 'user-optional' }] as const,
+      description: '**Auw**',
+    },
+    handler: async (ctx) => {
+      logger.debug('Brak command', ctx.parsedArgs, ctx.args);
+      const [user] = ctx.parsedArgs;
+      await buy(ctx, PRODUCTS_AQUARIUS, 1, 1, user);
+    },
+    policy: isGuest,
+  });
+
+  commands.register({
+    description: {
+      name: 'balance',
+      args: [],
+      description: 'Show your own balance',
+    },
+    handler: async (ctx) => {
+      const callerId = ctx.msg.rawMessage.envelope.sourceUuid;
+      const user = users.getUser(callerId);
+      assert(user, 'User not found');
+
+      if (!user.sudosId) {
+        await emoji(ctx.msg, '❌');
+        await reply(ctx.msg, `SudoSOS user ID missing.\nsee *help link* to link your SudoSOS account.`);
+        return;
+      }
+
+      const sudososUser = await sudosos.getUserById(user.sudosId);
+      if (!sudososUser) {
+        await emoji(ctx.msg, '❌');
+        await reply(ctx.msg, `SudoSOS user ID ${user.sudosId} not found.`);
+        return;
+      }
+
+      const balance = await sudosos.getBalance(user.sudosId);
+      await emoji(ctx.msg, '💰');
+      await reply(ctx.msg, `[💰] ${sudososUser.firstName} (${sudososUser.id}) has €${balance.amount.amount / 100}`);
+    },
+    policy: isGuest,
+  });
+}

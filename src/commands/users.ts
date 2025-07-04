@@ -2,8 +2,8 @@ import { CommandContext, Commands } from '../commands';
 import { StoredUser, TEAMS, Users } from '../users';
 import { SignalMessage } from '../message';
 import { emoji, reply } from '../signal';
-import { logger } from '../index';
 import { env } from '../env';
+import { logger } from '../core/logger';
 import { isAdmin } from './policy';
 
 export function registerUserCommands(commands: Commands, users: Users) {
@@ -226,7 +226,7 @@ export function registerUserCommands(commands: Commands, users: Users) {
   commands.registerTyped({
     description: {
       name: 'user',
-      args: [{ name: 'user', required: true, description: 'User to get info for', type: 'user' }],
+      args: [{ name: 'user', required: true, description: 'User to get info for', type: 'user', rest: false }] as const,
       description: 'Get info about a user',
     },
     handler: async (ctx) => {

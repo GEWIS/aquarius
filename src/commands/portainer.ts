@@ -4,8 +4,9 @@ import { reply, emoji } from '../signal';
 import { Portainer } from '../portainer';
 import { Stack } from '../portainer.types';
 import { SignalMessage } from '../message';
-import { logger, UPDATE_REQUEST_MESSAGE } from '../index';
+import { UPDATE_REQUEST_MESSAGE } from '../index';
 import { env } from '../env';
+import { logger } from '../core/logger';
 import { isCBC } from './policy';
 
 export function registerPortainerCommands(commands: Commands, portainer: Portainer) {

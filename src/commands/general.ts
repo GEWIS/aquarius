@@ -1,8 +1,8 @@
 import path from 'path';
 import { readFile } from 'node:fs/promises';
 import { emoji, reply } from '../signal';
-import { logger } from '../index';
 import { env } from '../env';
+import { logger } from '../core/logger';
 import { isAdmin, isGuest } from './policy';
 import { Command, CommandContext, CommandHandler, Commands } from './index';
 
