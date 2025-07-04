@@ -328,6 +328,11 @@ export function registerSudoSOSModule(api: ModuleApi) {
 
       await reply(msg, 'LEEEEERREEEEEN?????');
       await emoji(msg, '😋');
+
+      const user = users.getUser(msg.rawMessage.envelope.sourceUuid);
+      // silent fail
+      if (!user || !user.sudosId) return;
+
       await learnCommand.handler({
         msg,
         command: learnCommand,
