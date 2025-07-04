@@ -327,8 +327,6 @@ export function registerSudoSOSModule(api: ModuleApi) {
       assert(learnCommand, 'leren command not found');
 
       await reply(msg, 'LEEEEERREEEEEN?????');
-      await emoji(msg, '😋');
-
       const user = users.getUser(msg.rawMessage.envelope.sourceUuid);
       // silent fail
       if (!user || !user.sudosId) return;
@@ -340,6 +338,7 @@ export function registerSudoSOSModule(api: ModuleApi) {
         callerId: msg.rawMessage.envelope.sourceUuid,
         user: undefined,
       });
+      await emoji(msg, '😋');
     }
   };
 
