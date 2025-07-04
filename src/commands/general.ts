@@ -124,7 +124,7 @@ export async function logLevel(ctx: CommandContext): Promise<void> {
       logger.level = 'error';
       break;
     default:
-      await reply(ctx.msg, 'Invalid log level. Valid levels: debug, info, warn, error, trace');
+      await reply(ctx.msg, '**Invalid log level.**\nValid levels: debug, info, warn, error, trace');
       return;
   }
   await emoji(ctx.msg, '✅');
