@@ -16,6 +16,7 @@ import {
   ProductCategoriesApi,
   ProductsApi,
   RbacApi,
+  ReportResponse,
   RevisionRequest,
   RootApi,
   SellerPayoutsApi,
@@ -35,6 +36,7 @@ import {
 } from '@sudosos/sudosos-client';
 import axios, { AxiosHeaders, AxiosInstance, AxiosResponse } from 'axios';
 import { env } from '../../env';
+import {logger} from "../../core/logger";
 
 let token: string = '';
 let tokenExpiry: number = 0;
@@ -156,6 +158,10 @@ export class SudoSOS {
 
   async getBalance(userId: number): Promise<BalanceResponse> {
     return (await this.apiService.balance.getBalanceId(userId)).data;
+  }
+
+  async getReport(userId: number, start = new Date('2020-01-01'), end = new Date()): Promise<ReportResponse> {
+    return (await this.apiService.user.getUsersPurchasesReport(userId, start.toISOString(), end.toISOString())).data;
   }
 }
 

@@ -20,6 +20,10 @@ const PRODUCTS_METER = 80;
 const PRODUCT_LEREN = 75;
 const PRODUCTS_AQUARIUS = 244;
 
+function formatEuro(n: number): string {
+  return (n / 100).toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' });
+}
+
 export function registerSudoSOSModule(api: ModuleApi) {
   const { commands, users } = api;
 
@@ -250,7 +254,7 @@ export function registerSudoSOSModule(api: ModuleApi) {
     },
     handler: async (ctx) => {
       const [user] = ctx.parsedArgs;
-      await buy(ctx, PRODUCTS_METER, 2, 1, user);
+      await buy(ctx, PRODUCTS_METER, 10, 1, user);
     },
     policy: isGuest,
   });
@@ -271,6 +275,13 @@ export function registerSudoSOSModule(api: ModuleApi) {
     policy: isGuest,
   });
 
+  const getUser = (ctx: CommandContext) => {
+    const callerId = ctx.msg.rawMessage.envelope.sourceUuid;
+    const user = users.getUser(callerId);
+    assert(user, 'User not found');
+    return user;
+  };
+
   commands.register({
     description: {
       name: 'balance',
@@ -278,9 +289,7 @@ export function registerSudoSOSModule(api: ModuleApi) {
       description: 'Show your own balance',
     },
     handler: async (ctx) => {
-      const callerId = ctx.msg.rawMessage.envelope.sourceUuid;
-      const user = users.getUser(callerId);
-      assert(user, 'User not found');
+      const user = getUser(ctx);
 
       if (!user.sudosId) {
         await emoji(ctx.msg, '❌');
@@ -297,7 +306,10 @@ export function registerSudoSOSModule(api: ModuleApi) {
 
       const balance = await sudosos.getBalance(user.sudosId);
       await emoji(ctx.msg, '💰');
-      await reply(ctx.msg, `[💰] ${sudososUser.firstName} (${sudososUser.id}) has €${balance.amount.amount / 100}`);
+      await reply(
+        ctx.msg,
+        `[💰] ${sudososUser.firstName} (${sudososUser.id}) has ${formatEuro(balance.amount.amount)}`,
+      );
     },
     policy: isGuest,
   });
@@ -313,6 +325,32 @@ export function registerSudoSOSModule(api: ModuleApi) {
     handler: async (ctx) => {
       const [user] = ctx.parsedArgs;
       await buy(ctx, PRODUCT_LEREN, 10, 1, user);
+    },
+    policy: isGuest,
+  });
+
+  commands.registerTyped({
+    description: {
+      name: 'total',
+      args: [],
+      description: 'Information about your total expenses',
+    },
+    handler: async (ctx) => {
+      const user = getUser(ctx);
+
+      if (!user.sudosId) {
+        await emoji(ctx.msg, '❌');
+        await reply(ctx.msg, `SudoSOS user ID missing.\nsee *help link* to link your SudoSOS account.`);
+        return;
+      }
+
+      await emoji(ctx.msg, '🔄');
+      const report = await sudosos.getReport(user.sudosId);
+
+      await emoji(ctx.msg, '💰');
+      const totalExpenses = report.totalInclVat.amount;
+
+      await reply(ctx.msg, `[💰] You have spent a total of ${formatEuro(totalExpenses)}`);
     },
     policy: isGuest,
   });
