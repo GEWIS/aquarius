@@ -1,6 +1,6 @@
-import { StoredUser, Users } from '../users';
 import { logger } from '../core/logger';
 import { MessageMention, SignalMessage } from '../core/message';
+import { StoredUser, Users } from '../modules/users/users';
 
 export type CoreArgTypes = {
   string: string;

@@ -4,14 +4,14 @@ import {
   PointOfSaleWithContainersResponse,
   ProductResponse,
 } from '@sudosos/sudosos-client';
-import { PluginApi } from '../../core/plugin-api';
+import { ModuleApi } from '../../core/module-api';
 import { CommandContext } from '../../commands';
 import { env } from '../../env';
 import { isABC, isGuest } from '../../commands/policy';
-import { StoredUser } from '../../users';
 import { logger } from '../../core/logger';
 import { SignalMessage } from '../../core/message';
 import { emoji, reply } from '../signal/signal';
+import { StoredUser } from '../users/users';
 import { SudoSOS } from './sudosos';
 
 const PRODUCTS_GRIMBERGEN = 51;
@@ -19,7 +19,7 @@ const PRODUCTS_VIPER = 468;
 const PRODUCTS_METER = 80;
 const PRODUCTS_AQUARIUS = 244;
 
-export function registerSudoSOSPlugin(api: PluginApi) {
+export function registerSudoSOSModule(api: ModuleApi) {
   const { commands, users } = api;
 
   const { SUDOSOS_API_URL, SUDOSOS_API_KEY, SUDOSOS_USER_ID } = env;

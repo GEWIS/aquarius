@@ -1,5 +1,5 @@
 import { env } from '../env';
-import { TEAMS } from '../users';
+import { TEAMS } from '../modules/users/users';
 import { CommandContext, CommandPolicy } from './index';
 
 export const isAdmin: CommandPolicy = async (ctx: CommandContext): Promise<boolean> => {

@@ -1,10 +1,9 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { env } from './env';
-
-import { logger } from './core/logger';
-import { emoji, reply } from './modules/signal/signal';
-import { SignalMessage } from './core/message';
+import { logger } from '../../core/logger';
+import { SignalMessage } from '../../core/message';
+import { env } from '../../env';
+import { emoji, reply } from '../signal/signal';
 
 export interface StoredUser {
   uuid: string;

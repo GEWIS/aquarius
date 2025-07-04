@@ -1,10 +1,10 @@
-import { CommandContext, Commands } from '../commands';
-import { StoredUser, TEAMS, Users } from '../users';
-import { env } from '../env';
-import { logger } from '../core/logger';
-import { emoji, reply } from '../modules/signal/signal';
-import { SignalMessage } from '../core/message';
-import { isAdmin } from './policy';
+import { CommandContext, Commands } from '../../commands';
+import { emoji, reply } from '../signal/signal';
+import { isAdmin } from '../../commands/policy';
+import { SignalMessage } from '../../core/message';
+import { logger } from '../../core/logger';
+import { env } from '../../env';
+import { StoredUser, TEAMS, Users } from './users';
 
 export function registerUserCommands(commands: Commands, users: Users) {
   commands.register({

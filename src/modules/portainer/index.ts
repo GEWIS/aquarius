@@ -3,14 +3,14 @@ import { CommandContext, CommandHandler } from '../../commands';
 import { isCBC } from '../../commands/policy';
 import { env } from '../../env';
 import { logger } from '../../core/logger';
-import { PluginApi } from '../../core/plugin-api';
+import { ModuleApi } from '../../core/module-api';
 import { emoji, reply } from '../signal/signal';
 import { SignalMessage } from '../../core/message';
 import { UPDATE_REQUEST_MESSAGE } from '../signal';
 import { Portainer } from './portainer';
 import { Stack } from './portainer.types';
 
-export function registerPortainerPlugin(api: PluginApi) {
+export function registerPortainerModule(api: ModuleApi) {
   const { commands } = api;
 
   const { PORTAINER_URL, PORTAINER_API_KEY } = env;
