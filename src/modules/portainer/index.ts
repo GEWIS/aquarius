@@ -63,6 +63,7 @@ export function registerPortainerModule(api: ModuleApi) {
       await portainer.startStack(stack);
       await emoji(ctx.msg, '👍');
     }),
+    policy: isCBC,
   });
 
   commands.register({

@@ -250,7 +250,7 @@ export function registerGeneral(commands: Commands) {
       name: 'help',
       args: [{ name: 'command', required: false, description: 'Command to get detailed help for' }],
       description: 'Show help for commands',
-      aliases: ['h'],
+      aliases: ['h', 'info', 'i'],
     },
     handler: async (ctx: CommandContext) => {
       const h = help(commands);

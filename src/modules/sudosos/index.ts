@@ -312,7 +312,7 @@ export function registerSudoSOSModule(api: ModuleApi) {
     },
     handler: async (ctx) => {
       const [user] = ctx.parsedArgs;
-      await buy(ctx, PRODUCT_LEREN, 2, 1, user);
+      await buy(ctx, PRODUCT_LEREN, 10, 1, user);
     },
     policy: isGuest,
   });
@@ -322,24 +322,24 @@ export function registerSudoSOSModule(api: ModuleApi) {
     const regexLeer = /l+e{2,}r+/i;
     const regexLeren = /l+e+r+e+n+/i;
 
-    if (regexLeer.test(raw) || regexLeren.test(raw)) {
-      const learnCommand = commands.getCommand('leren');
-      assert(learnCommand, 'leren command not found');
+    if (!(regexLeer.test(raw) || regexLeren.test(raw))) return;
 
-      await reply(msg, 'LEEEEERREEEEEN?????');
-      const user = users.getUser(msg.rawMessage.envelope.sourceUuid);
-      // silent fail
-      if (!user || !user.sudosId) return;
+    const learnCommand = commands.getCommand('leren');
+    assert(learnCommand, 'leren command not found');
 
-      await learnCommand.handler({
-        msg,
-        command: learnCommand,
-        args: [],
-        callerId: msg.rawMessage.envelope.sourceUuid,
-        user: undefined,
-      });
-      await emoji(msg, '😋');
-    }
+    await reply(msg, 'LEEEEERREEEEEN?????');
+    const user = users.getUser(msg.rawMessage.envelope.sourceUuid);
+    // silent fail
+    if (!user || !user.sudosId) return;
+
+    await learnCommand.handler({
+      msg,
+      command: learnCommand,
+      args: [],
+      callerId: msg.rawMessage.envelope.sourceUuid,
+      user: undefined,
+    });
+    await emoji(msg, '😋');
   };
 
   return {

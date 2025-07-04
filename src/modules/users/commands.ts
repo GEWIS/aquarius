@@ -235,4 +235,21 @@ export function registerUserCommands(commands: Commands, users: Users) {
     },
     policy: isAdmin,
   });
+
+  commands.registerTyped({
+    description: {
+      name: 'guest',
+      args: [{ name: 'user', required: true, description: 'Guests to trust', type: 'user', rest: true }] as const,
+      description: 'Trust user(s) and give role guest',
+    },
+    handler: async (ctx) => {
+      const [user] = ctx.parsedArgs;
+      for (const u of user) {
+        await users.trust(u.uuid);
+        users.addTeam(u.uuid, TEAMS.GUEST);
+      }
+      await emoji(ctx.msg, '✅');
+    },
+    policy: isAdmin,
+  });
 }
