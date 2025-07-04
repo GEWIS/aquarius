@@ -1,7 +1,7 @@
 import { PluginApi } from '../../core/plugin-api';
 import { env } from '../../env';
-import { sendSavedReaction, SignalRpcMessageSource } from './signal';
 import { logger } from '../../core/logger';
+import { sendSavedReaction, SignalRpcMessageSource } from './signal';
 import { registerCommands } from './commands';
 
 export const UPDATE_REQUEST_MESSAGE = '/app/data/update-request-message.json';

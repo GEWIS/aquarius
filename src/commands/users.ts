@@ -2,9 +2,9 @@ import { CommandContext, Commands } from '../commands';
 import { StoredUser, TEAMS, Users } from '../users';
 import { env } from '../env';
 import { logger } from '../core/logger';
-import { isAdmin } from './policy';
-import { emoji, reply } from '../plugins/signal/signal';
+import { emoji, reply } from '../modules/signal/signal';
 import { SignalMessage } from '../core/message';
+import { isAdmin } from './policy';
 
 export function registerUserCommands(commands: Commands, users: Users) {
   commands.register({

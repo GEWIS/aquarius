@@ -2,9 +2,9 @@ import path from 'path';
 import { readFile } from 'node:fs/promises';
 import { env } from '../env';
 import { logger } from '../core/logger';
+import { emoji, reply } from '../modules/signal/signal';
 import { isAdmin, isGuest } from './policy';
 import { Command, CommandContext, CommandHandler, Commands } from './index';
-import { emoji, reply } from '../plugins/signal/signal';
 
 export function ping(ctx: CommandContext): Promise<void> {
   return reply(ctx.msg, `Pong! [${ctx.args.join(' ')}]`);

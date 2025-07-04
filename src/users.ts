@@ -3,7 +3,7 @@ import path from 'path';
 import { env } from './env';
 
 import { logger } from './core/logger';
-import { emoji, reply } from './plugins/signal/signal';
+import { emoji, reply } from './modules/signal/signal';
 import { SignalMessage } from './core/message';
 
 export interface StoredUser {

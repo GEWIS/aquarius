@@ -10,9 +10,9 @@ import { env } from '../../env';
 import { isABC, isGuest } from '../../commands/policy';
 import { StoredUser } from '../../users';
 import { logger } from '../../core/logger';
-import { SudoSOS } from './sudosos';
 import { SignalMessage } from '../../core/message';
 import { emoji, reply } from '../signal/signal';
+import { SudoSOS } from './sudosos';
 
 const PRODUCTS_GRIMBERGEN = 51;
 const PRODUCTS_VIPER = 468;

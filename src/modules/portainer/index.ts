@@ -4,11 +4,11 @@ import { isCBC } from '../../commands/policy';
 import { env } from '../../env';
 import { logger } from '../../core/logger';
 import { PluginApi } from '../../core/plugin-api';
-import { Stack } from './portainer.types';
-import { Portainer } from './portainer';
 import { emoji, reply } from '../signal/signal';
 import { SignalMessage } from '../../core/message';
 import { UPDATE_REQUEST_MESSAGE } from '../signal';
+import { Portainer } from './portainer';
+import { Stack } from './portainer.types';
 
 export function registerPortainerPlugin(api: PluginApi) {
   const { commands } = api;

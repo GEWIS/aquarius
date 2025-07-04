@@ -1,14 +1,14 @@
 // @ts-expect-error WebSocket is not defined in the global scope
+import assert from 'node:assert';
 import WebSocket from 'ws';
 import { Commands } from './commands';
 import { Users } from './users';
 import { registerUserCommands } from './commands/users';
 import { argumentsRegistry } from './commands/arguments';
-import { registerSudoSOSPlugin } from './plugins/sudosos';
+import { registerSudoSOSPlugin } from './modules/sudosos';
 import { logger } from './core/logger';
-import { registerPortainerPlugin } from './plugins/portainer';
-import { registerSignalPlugin } from './plugins/signal';
-import assert from 'node:assert';
+import { registerPortainerPlugin } from './modules/portainer';
+import { registerSignalPlugin } from './modules/signal';
 import { SignalMessage } from './core/message';
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 global.WebSocket = WebSocket;
