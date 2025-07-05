@@ -66,6 +66,13 @@ jobs:
             GIT_COMMIT_BRANCH=${{ env.GIT_COMMIT_BRANCH }}
             DOCKER_VERSION=${{ env.DOCKER_VERSION }}
 
+      - name: Tag and push to Private Nexus
+        run: |
+          docker tag local/aquarius:build abc.docker-registry.gewis.nl/eou/aquarius:${{ env.DOCKER_VERSION }}
+          docker tag local/aquarius:build abc.docker-registry.gewis.nl/eou/aquarius:latest
+          docker push abc.docker-registry.gewis.nl/eou/aquarius:${{ env.DOCKER_VERSION }}
+          docker push abc.docker-registry.gewis.nl/eou/aquarius:latest            
+
       - name: Tag and push to GHCR
         run: |
           docker tag local/aquarius:build ghcr.io/gewis/aquarius:${{ env.DOCKER_VERSION }}
@@ -73,9 +80,3 @@ jobs:
           docker push ghcr.io/gewis/aquarius:${{ env.DOCKER_VERSION }}
           docker push ghcr.io/gewis/aquarius:latest
 
-      - name: Tag and push to Private Nexus
-        run: |
-          docker tag local/aquarius:build abc.docker-registry.gewis.nl/eou/aquarius:${{ env.DOCKER_VERSION }}
-          docker tag local/aquarius:build abc.docker-registry.gewis.nl/eou/aquarius:latest
-          docker push abc.docker-registry.gewis.nl/eou/aquarius:${{ env.DOCKER_VERSION }}
-          docker push abc.docker-registry.gewis.nl/eou/aquarius:latest
