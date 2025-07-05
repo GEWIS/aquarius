@@ -12,7 +12,6 @@ import { isABC, isGuest } from '../../commands/policy';
 import { logger } from '../../core/logger';
 import { SignalMessage } from '../../core/message';
 import { emoji, reply } from '../signal/signal';
-import { StoredUser } from '../users/users';
 import { SudoSOS } from './sudosos';
 
 const PRODUCTS_GRIMBERGEN = 51;
@@ -40,13 +39,19 @@ export function registerSudoSOSModule(api: ModuleApi) {
     msg: SignalMessage,
     pos: PointOfSaleWithContainersResponse,
     productId: number,
-    userId: number,
     times: number = 1,
   ) => {
-    const user = await sudosos.getUserById(userId);
+    const savedUser = users.getUser(msg.rawMessage.envelope.sourceUuid);
+    if (!savedUser || !savedUser.sudosId) {
+      await emoji(msg, '❌');
+      await reply(msg, `No SudoSOS user ID found.\nsee *help link* to link your SudoSOS account.`);
+      return;
+    }
+
+    const user = await sudosos.getUserById(savedUser.sudosId);
     if (!user) {
       await emoji(msg, '❌');
-      await reply(msg, `User ${userId} not found`);
+      await reply(msg, `Linked SudoSOS user ID ${savedUser.sudosId} not found`);
       return;
     }
 
@@ -74,7 +79,7 @@ export function registerSudoSOSModule(api: ModuleApi) {
       { container: { id: p.c.id, revision: p.c.revision ?? 0 }, to: p.c.owner.id },
       { id: p.p.id, revision: p.p.revision },
       times,
-      userId,
+      user.id,
       p.p.priceInclVat.amount,
     );
 
@@ -86,17 +91,10 @@ export function registerSudoSOSModule(api: ModuleApi) {
     );
   };
 
-  const buy = async (ctx: CommandContext, productId: number, posId: number, amount: number, user: StoredUser) => {
+  const buy = async (ctx: CommandContext, productId: number, posId: number, amount: number) => {
     await emoji(ctx.msg, '🔄');
-
-    if (!user.sudosId) {
-      await emoji(ctx.msg, '❌');
-      await reply(ctx.msg, `SudoSOS user ID missing.\nsee *help link* to link your SudoSOS account.`);
-      return;
-    }
-
     const pos = await sudosos.getPosById(posId);
-    await buyProduct(ctx.msg, pos, productId, user.sudosId, amount);
+    await buyProduct(ctx.msg, pos, productId, amount);
   };
 
   commands.register({
@@ -201,13 +199,12 @@ export function registerSudoSOSModule(api: ModuleApi) {
         { name: 'productId', required: true, description: 'Product ID to buy', type: 'number' },
         { name: 'posId', required: true, description: 'Point of Sale ID', type: 'number' },
         { name: 'amount', required: false, description: 'Amount (default: 1)', type: 'number' },
-        { name: 'user', required: false, description: 'User ID (optional if linked)', type: 'user-optional' },
       ] as const,
       description: 'Buy any product for any user at any POS',
     },
     handler: async (ctx) => {
-      const [productId, posId, amount, user] = ctx.parsedArgs;
-      await buy(ctx, productId, posId, amount, user);
+      const [productId, posId, amount] = ctx.parsedArgs;
+      await buy(ctx, productId, posId, amount);
     },
     policy: isGuest,
   });
@@ -217,14 +214,11 @@ export function registerSudoSOSModule(api: ModuleApi) {
   commands.registerTyped({
     description: {
       name: 'lint-fix',
-      args: [
-        { name: 'user', required: false, description: 'User ID (optional if linked)', type: 'user-optional' },
-      ] as const,
+      args: [] as const,
       description: 'Buys a *Grimbergen Tripel* for the user',
     },
     handler: async (ctx) => {
-      const [user] = ctx.parsedArgs;
-      await buy(ctx, PRODUCTS_GRIMBERGEN, 1, 1, user);
+      await buy(ctx, PRODUCTS_GRIMBERGEN, 1, 1);
     },
     policy: isGuest,
   });
@@ -232,15 +226,12 @@ export function registerSudoSOSModule(api: ModuleApi) {
   commands.registerTyped({
     description: {
       name: 'classic',
-      args: [
-        { name: 'amount', required: true, description: 'Amount to buy', type: 'number' },
-        { name: 'userId', required: false, description: 'User ID (optional if linked)', type: 'user-optional' },
-      ] as const,
+      args: [{ name: 'amount', required: true, description: 'Amount to buy', type: 'number' }] as const,
       description: 'Buys a *Classic* for the user',
     },
     handler: async (ctx) => {
-      const [amount, user] = ctx.parsedArgs;
-      await buy(ctx, PRODUCTS_VIPER, 1, amount, user);
+      const [amount] = ctx.parsedArgs;
+      await buy(ctx, PRODUCTS_VIPER, 1, amount);
     },
     policy: isGuest,
   });
@@ -248,14 +239,11 @@ export function registerSudoSOSModule(api: ModuleApi) {
   commands.registerTyped({
     description: {
       name: 'meter',
-      args: [
-        { name: 'userId', required: false, description: 'User ID (optional if linked)', type: 'user-optional' },
-      ] as const,
+      args: [] as const,
       description: 'Zo kom je een *meter* verder',
     },
     handler: async (ctx) => {
-      const [user] = ctx.parsedArgs;
-      await buy(ctx, PRODUCTS_METER, 10, 1, user);
+      await buy(ctx, PRODUCTS_METER, 10, 1);
     },
     policy: isGuest,
   });
@@ -263,15 +251,11 @@ export function registerSudoSOSModule(api: ModuleApi) {
   commands.registerTyped({
     description: {
       name: 'brak',
-      args: [
-        { name: 'userId', required: false, description: 'User ID (optional if linked)', type: 'user-optional' },
-      ] as const,
+      args: [] as const,
       description: '**Auw**',
     },
     handler: async (ctx) => {
-      logger.debug('Brak command', ctx.parsedArgs, ctx.args);
-      const [user] = ctx.parsedArgs;
-      await buy(ctx, PRODUCTS_AQUARIUS, 1, 1, user);
+      await buy(ctx, PRODUCTS_AQUARIUS, 1, 1);
     },
     policy: isGuest,
   });
@@ -318,14 +302,11 @@ export function registerSudoSOSModule(api: ModuleApi) {
   commands.registerTyped({
     description: {
       name: 'leren',
-      args: [
-        { name: 'user', required: false, description: 'User that is learning', type: 'user-optional', rest: false },
-      ] as const,
+      args: [] as const,
       description: 'Leren',
     },
     handler: async (ctx) => {
-      const [user] = ctx.parsedArgs;
-      await buy(ctx, PRODUCT_LEREN, 10, 1, user);
+      await buy(ctx, PRODUCT_LEREN, 10, 1);
     },
     policy: isGuest,
   });
