@@ -429,6 +429,68 @@ export function registerSudoSOSModule(api: ModuleApi) {
     await emoji(msg, '😋');
   };
 
+  type Reviewer = { login: string };
+  type PR = {
+    number: number;
+    title: string;
+    html_url: string;
+    requested_reviewers: Reviewer[];
+  };
+
+  async function getPRsWhereUserIsReviewer(repo: string, reviewer: string, owner = 'GEWIS'): Promise<PR[]> {
+    // Get all open PRs
+    const url = `https://api.github.com/repos/${owner}/${repo}/pulls?state=open&per_page=100`;
+    const res = await fetch(url);
+    const prs = (await res.json()) as Array<{
+      number: number;
+      title: string;
+      html_url: string;
+      requested_reviewers: Reviewer[];
+    }>;
+
+    // Filter PRs where the user is in requested_reviewers
+    return prs.filter((pr) => pr.requested_reviewers.some((r) => r.login.toLowerCase() === reviewer.toLowerCase()));
+  }
+
+  function getRepoParts(url: string): { owner: string; repo: string } {
+    const match = url.match(/github\.com\/([^/]+)\/([^/]+)/);
+    if (!match) throw new Error(`Invalid GitHub repo URL: ${url}`);
+    return { owner: match[1], repo: match[2] };
+  }
+
+  commands.registerTyped({
+    description: {
+      name: 'bump',
+      args: [{ name: 'user', required: true, description: 'User to bump', type: 'string' }] as const,
+      description: 'List all open PRs assigned to a specific user',
+      aliases: ['prs', 'b'] as const,
+    },
+    handler: async (ctx) => {
+      const [user] = ctx.parsedArgs;
+      const repoUrls = [env.SUDOSOS_BACKEND_GH_URL, env.SUDOSOS_FRONTEND_GH_URL];
+
+      let msg = `Hey ${user}, can you please check the following PRs?\n\n`;
+      let p = '';
+
+      for (const url of repoUrls) {
+        const { owner, repo } = getRepoParts(url);
+        const prs = await getPRsWhereUserIsReviewer(repo, user, owner);
+        for (const pr of prs) {
+          p += `*${repo}*\n**${pr.title}**\n${pr.html_url}\n\n`;
+        }
+      }
+
+      if (p === '') {
+        await emoji(ctx.msg, '❌');
+        return;
+      }
+
+      msg += p;
+      await emoji(ctx.msg, '✅');
+      await reply(ctx.msg, msg.trim());
+    },
+  });
+
   return {
     leren,
   };

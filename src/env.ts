@@ -12,4 +12,6 @@ export const env = {
   SUDOSOS_USER_ID: process.env.SUDOSOS_USER_ID ?? '',
   ADMIN_UUID: process.env.ADMIN_UUID ?? '',
   SERVICE_NAME: process.env.SERVICE_NAME ?? 'wrmwz8t7zkbujomdjgvu2accp',
+  SUDOSOS_BACKEND_GH_URL: process.env.SUDOSOS_BACKEND_GH_URL ?? 'https://github.com/GEWIS/sudosos-backend',
+  SUDOSOS_FRONTEND_GH_URL: process.env.SUDOSOS_FRONTEND_GH_URL ?? 'https://github.com/GEWIS/sudosos-frontend',
 };
