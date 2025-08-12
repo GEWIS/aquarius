@@ -5,7 +5,7 @@ import { emoji, reply } from '../modules/signal/signal';
 import { StoredUser, Users } from '../modules/users/users';
 import { registerGeneral } from './general';
 import { ArgParseError, ArgTuple, ArgumentsRegistry, CommandArg } from './arguments';
-import {isAdmin} from "./policy";
+import { isAdmin } from './policy';
 
 // ======== Types ========
 
