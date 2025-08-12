@@ -5,6 +5,7 @@ import { emoji, reply } from '../modules/signal/signal';
 import { StoredUser, Users } from '../modules/users/users';
 import { registerGeneral } from './general';
 import { ArgParseError, ArgTuple, ArgumentsRegistry, CommandArg } from './arguments';
+import {isAdmin} from "./policy";
 
 // ======== Types ========
 
@@ -180,6 +181,13 @@ export class Commands {
         await command.handler(ctx);
         return;
       }
+
+      const admin = await isAdmin(ctx);
+      if (admin) {
+        await command.handler(ctx);
+        return;
+      }
+
       if (user?.trusted !== true) {
         logger.trace('User', callerId, 'is not trusted.');
         await emoji(msg, '🚫');
@@ -190,6 +198,7 @@ export class Commands {
         await emoji(msg, '🚫');
         return;
       }
+
       await command.handler(ctx);
     } catch (e) {
       if (e instanceof AxiosError && e.response?.data) {
