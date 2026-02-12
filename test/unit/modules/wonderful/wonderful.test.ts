@@ -14,12 +14,12 @@ describe('wonderful helpers', () => {
   });
 
   describe('pickNotifySlackTexts', () => {
-    it('picks only notify_slack events after last seen index', () => {
+    it('picks only tool_result events after last seen index', () => {
       const events: WonderfulEvent[] = [
         { event_index: 0, event_type: 'status_change', text: 'Task created' },
-        { event_index: 1, event_type: 'notify_slack', text: 'Hello from agent' },
-        { event_index: 2, event_type: 'notify_slack', text: '  ' },
-        { event_index: 3, event_type: 'notify_slack', text: 'Another update' },
+        { event_index: 1, event_type: 'tool_result', text: 'Hello from agent' },
+        { event_index: 2, event_type: 'tool_result', text: '  ' },
+        { event_index: 3, event_type: 'tool_result', text: 'Another update' },
       ];
 
       expect(pickNotifySlackTexts(events, 1)).toEqual({
@@ -30,9 +30,9 @@ describe('wonderful helpers', () => {
 
     it('advances last seen to max index', () => {
       const events: WonderfulEvent[] = [
-        { event_index: 5, event_type: 'notify_slack', text: 'A' },
+        { event_index: 5, event_type: 'tool_result', text: 'A' },
         { event_index: 6, event_type: 'status_change', text: 'Task started' },
-        { event_index: 7, event_type: 'notify_slack', text: 'B' },
+        { event_index: 7, event_type: 'tool_result', text: 'B' },
       ];
 
       expect(pickNotifySlackTexts(events, 4)).toEqual({
@@ -46,11 +46,11 @@ describe('wonderful helpers', () => {
       });
     });
 
-    it('dedupes duplicate notify_slack indices within a single call', () => {
+    it('dedupes duplicate tool_result indices within a single call', () => {
       const events: WonderfulEvent[] = [
-        { event_index: 1, event_type: 'notify_slack', text: 'First' },
-        { event_index: 1, event_type: 'notify_slack', text: 'Duplicate same index' },
-        { event_index: 2, event_type: 'notify_slack', text: 'Second' },
+        { event_index: 1, event_type: 'tool_result', text: 'First' },
+        { event_index: 1, event_type: 'tool_result', text: 'Duplicate same index' },
+        { event_index: 2, event_type: 'tool_result', text: 'Second' },
       ];
 
       expect(pickNotifySlackTexts(events, -1)).toEqual({
@@ -61,8 +61,8 @@ describe('wonderful helpers', () => {
 
     it('handles missing indices', () => {
       const events: WonderfulEvent[] = [
-        { event_type: 'notify_slack', text: 'No index but still should send' },
-        { event_index: 2, event_type: 'notify_slack', text: 'Indexed' },
+        { event_type: 'tool_result', text: 'No index but still should send' },
+        { event_index: 2, event_type: 'tool_result', text: 'Indexed' },
       ];
 
       expect(pickNotifySlackTexts(events, 1)).toEqual({

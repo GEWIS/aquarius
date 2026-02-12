@@ -63,8 +63,8 @@ export function pickNotifySlackTexts(
     const idx = typeof e.event_index === 'number' ? e.event_index : undefined;
     if (idx !== undefined && idx > maxIndex) maxIndex = idx;
 
-    if (e.event_type !== 'notify_slack') continue;
-    // Ignore notify_slack events without an index to avoid re-sending them on every poll.
+    if (e.event_type !== 'tool_result') continue;
+    // Ignore tool_result events without an index to avoid re-sending them on every poll.
     if (idx === undefined) continue;
     if (idx <= lastSeenEventIndex) continue;
     if (typeof e.text !== 'string' || e.text.trim() === '') continue;
