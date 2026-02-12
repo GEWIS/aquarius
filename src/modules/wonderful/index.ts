@@ -63,6 +63,7 @@ export function registerWonderfulModule(api: ModuleApi) {
 
       const pollIntervalMs = parsePositiveInt(env.WONDERFUL_POLL_INTERVAL_MS, 2000);
       const pollTimeoutMs = parsePositiveInt(env.WONDERFUL_POLL_TIMEOUT_MS, 60000);
+      const terminalGraceMs = Math.min(parsePositiveInt(env.WONDERFUL_TERMINAL_GRACE_MS, 20_000), pollTimeoutMs);
       const createTimeoutMs = Math.min(10_000, pollTimeoutMs);
 
       await emoji(ctx.msg, '🔄');
@@ -130,7 +131,7 @@ export function registerWonderfulModule(api: ModuleApi) {
           if (status === 'completed' || status === 'failed') {
             if (terminalStatus === null) {
               terminalStatus = status;
-              terminalGraceUntil = Math.min(deadline, Date.now() + 5_000);
+              terminalGraceUntil = Math.min(deadline, Date.now() + terminalGraceMs);
             }
             if (terminalGraceUntil !== null && Date.now() >= terminalGraceUntil) {
               if (!emittedAnyAgentText) {
