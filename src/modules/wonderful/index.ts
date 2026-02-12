@@ -98,7 +98,9 @@ export function registerWonderfulModule(api: ModuleApi) {
 
       const deadline = Date.now() + pollTimeoutMs;
       let lastSeenEventIndex = -1;
-      let completedGraceUntil: number | null = null;
+      let terminalStatus: 'completed' | 'failed' | null = null;
+      let terminalGraceUntil: number | null = null;
+      let emittedAnyAgentText = false;
 
       while (Date.now() < deadline) {
         try {
@@ -120,20 +122,26 @@ export function registerWonderfulModule(api: ModuleApi) {
           lastSeenEventIndex = picked.newLastSeenEventIndex;
 
           for (const text of picked.texts) {
+            emittedAnyAgentText = true;
             await reply(ctx.msg, text);
           }
 
           const status = task?.status;
-          if (status === 'completed') {
-            if (completedGraceUntil === null) {
-              completedGraceUntil = Math.min(deadline, Date.now() + 5_000);
+          if (status === 'completed' || status === 'failed') {
+            if (terminalStatus === null) {
+              terminalStatus = status;
+              terminalGraceUntil = Math.min(deadline, Date.now() + 5_000);
             }
-            if (Date.now() >= completedGraceUntil) {
-              await emoji(ctx.msg, '✅');
+            if (terminalGraceUntil !== null && Date.now() >= terminalGraceUntil) {
+              if (!emittedAnyAgentText) {
+                const fallback = terminalStatus === 'failed' ? task?.error_reason ?? task?.resolution_summary : task?.resolution_summary;
+                if (fallback) await reply(ctx.msg, fallback);
+              }
+
+              await emoji(ctx.msg, terminalStatus === 'completed' ? '✅' : '❌');
               return;
             }
-          }
-          if (status && status !== 'pending' && status !== 'live') {
+          } else if (status && status !== 'pending' && status !== 'live') {
             await emoji(ctx.msg, '❌');
             await reply(ctx.msg, `Wonderful task ended with status: ${status}`);
             return;

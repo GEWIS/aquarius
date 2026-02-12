@@ -9,6 +9,7 @@ export type WonderfulTask = {
   id: string;
   status?: string;
   resolution_summary?: string;
+  error_reason?: string;
 };
 
 export type WonderfulEvent = {
