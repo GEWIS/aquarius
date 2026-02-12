@@ -134,7 +134,10 @@ export function registerWonderfulModule(api: ModuleApi) {
             }
             if (terminalGraceUntil !== null && Date.now() >= terminalGraceUntil) {
               if (!emittedAnyAgentText) {
-                const fallback = terminalStatus === 'failed' ? task?.error_reason ?? task?.resolution_summary : task?.resolution_summary;
+                const fallback =
+                  terminalStatus === 'failed'
+                    ? (task?.error_reason ?? task?.resolution_summary)
+                    : task?.resolution_summary;
                 if (fallback) await reply(ctx.msg, fallback);
               }
 
