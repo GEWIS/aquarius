@@ -14,4 +14,10 @@ export const env = {
   SERVICE_NAME: process.env.SERVICE_NAME ?? 'wrmwz8t7zkbujomdjgvu2accp',
   SUDOSOS_BACKEND_GH_URL: process.env.SUDOSOS_BACKEND_GH_URL ?? 'https://github.com/GEWIS/sudosos-backend',
   SUDOSOS_FRONTEND_GH_URL: process.env.SUDOSOS_FRONTEND_GH_URL ?? 'https://github.com/GEWIS/sudosos-frontend',
+  WONDERFUL_WEBHOOK_URL: process.env.WONDERFUL_WEBHOOK_URL ?? '',
+  WONDERFUL_WEBHOOK_SECRET: process.env.WONDERFUL_WEBHOOK_SECRET ?? '',
+  WONDERFUL_API_URL: process.env.WONDERFUL_API_URL ?? '',
+  WONDERFUL_API_KEY: process.env.WONDERFUL_API_KEY ?? '',
+  WONDERFUL_POLL_INTERVAL_MS: process.env.WONDERFUL_POLL_INTERVAL_MS ?? '2000',
+  WONDERFUL_POLL_TIMEOUT_MS: process.env.WONDERFUL_POLL_TIMEOUT_MS ?? '60000',
 };

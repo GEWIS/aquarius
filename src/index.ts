@@ -10,6 +10,7 @@ import { registerSignalModule } from './modules/signal';
 import { SignalMessage } from './core/message';
 import { registerUserModule } from './modules/users';
 import { registerUserCommands } from './modules/users/commands';
+import { registerWonderfulModule } from './modules/wonderful';
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 global.WebSocket = WebSocket;
 
@@ -29,6 +30,7 @@ function main() {
   registerUserCommands(commands, users);
   const { leren } = registerSudoSOSModule(api);
   registerPortainerModule(api);
+  registerWonderfulModule(api);
 
   source.onMessage(async (ctx: SignalMessage) => {
     void leren(ctx);
