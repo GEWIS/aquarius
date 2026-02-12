@@ -9,7 +9,7 @@ import {
   buildWonderfulPayload,
   extractCreatedTaskId,
   extractTaskAndEvents,
-  pickNotifySlackTexts,
+  pickAgentTexts,
   sleep,
   WonderfulCreateTaskResponse,
   WonderfulGetTaskResponse,
@@ -115,7 +115,7 @@ export function registerWonderfulModule(api: ModuleApi) {
           );
 
           const { task, events } = extractTaskAndEvents(res.data);
-          const picked = pickNotifySlackTexts(events, lastSeenEventIndex);
+          const picked = pickAgentTexts(events, lastSeenEventIndex);
           lastSeenEventIndex = picked.newLastSeenEventIndex;
 
           for (const text of picked.texts) {
