@@ -98,6 +98,7 @@ export function registerWonderfulModule(api: ModuleApi) {
 
       const deadline = Date.now() + pollTimeoutMs;
       let lastSeenEventIndex = -1;
+      let completedGraceUntil: number | null = null;
 
       while (Date.now() < deadline) {
         try {
@@ -124,8 +125,13 @@ export function registerWonderfulModule(api: ModuleApi) {
 
           const status = task?.status;
           if (status === 'completed') {
-            await emoji(ctx.msg, '✅');
-            return;
+            if (completedGraceUntil === null) {
+              completedGraceUntil = Math.min(deadline, Date.now() + 5_000);
+            }
+            if (Date.now() >= completedGraceUntil) {
+              await emoji(ctx.msg, '✅');
+              return;
+            }
           }
           if (status && status !== 'pending' && status !== 'live') {
             await emoji(ctx.msg, '❌');
