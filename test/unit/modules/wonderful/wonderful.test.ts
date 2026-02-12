@@ -4,7 +4,7 @@ import { buildWonderfulPayload, pickAgentTexts, type WonderfulEvent } from '../.
 describe('wonderful helpers', () => {
   describe('buildWonderfulPayload', () => {
     it('joins message parts into a payload', () => {
-      expect(buildWonderfulPayload(['hello', 'world'])).toEqual({ message: 'hello world' });
+      expect(buildWonderfulPayload(['hello', 'world'])).toEqual({ payload: { message: 'hello world' } });
     });
 
     it('returns null for empty payload', () => {
