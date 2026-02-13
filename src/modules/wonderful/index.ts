@@ -21,6 +21,21 @@ function parsePositiveInt(value: string, fallback: number): number {
   return n;
 }
 
+function extractReplyText(ctx: CommandContext): string | undefined {
+  const dm = ctx.msg.rawMessage?.envelope?.dataMessage;
+  const direct = dm?.quote?.text;
+  if (typeof direct === 'string' && direct.trim() !== '') return direct;
+
+  // Fallback for alternate shapes (signal-cli-rest-api variants).
+  const anyDm = dm as unknown as Record<string, unknown> | undefined;
+  const quote = (anyDm?.quote as Record<string, unknown> | undefined) ?? undefined;
+  const alt =
+    (typeof quote?.message === 'string' && quote.message) ||
+    (typeof quote?.body === 'string' && quote.body) ||
+    undefined;
+  return typeof alt === 'string' && alt.trim() !== '' ? alt : undefined;
+}
+
 export function registerWonderfulModule(api: ModuleApi) {
   const { commands } = api;
 
@@ -42,7 +57,7 @@ export function registerWonderfulModule(api: ModuleApi) {
     },
     policy: isABC,
     handler: async (ctx: CommandContext) => {
-      const payload = buildWonderfulPayload(ctx.args);
+      const payload = buildWonderfulPayload(ctx.args, extractReplyText(ctx));
       if (!payload) {
         await emoji(ctx.msg, '❌');
         await reply(ctx.msg, 'Usage: wonderful <message>');

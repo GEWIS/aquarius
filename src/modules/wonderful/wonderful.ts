@@ -28,10 +28,14 @@ export type WonderfulGetTaskResponse = {
   status?: number;
 };
 
-export function buildWonderfulPayload(messageParts: string[]): { payload: { message: string } } | null {
+export function buildWonderfulPayload(
+  messageParts: string[],
+  replyText?: string,
+): { payload: { message: string; reply?: string } } | null {
   const message = messageParts.join(' ').trim();
   if (message === '') return null;
-  return { payload: { message } };
+  const reply = replyText?.trim();
+  return { payload: { message, ...(reply ? { reply } : {}) } };
 }
 
 export function extractCreatedTaskId(res: WonderfulCreateTaskResponse): string | null {

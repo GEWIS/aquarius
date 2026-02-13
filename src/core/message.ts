@@ -34,6 +34,9 @@ interface RawMessage {
       viewOnce: boolean;
       reaction?: Reaction;
       mentions?: MessageMention[];
+      quote?: {
+        text?: string;
+      };
       groupInfo?: {
         groupId: string;
         groupName: string;

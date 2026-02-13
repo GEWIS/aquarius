@@ -7,6 +7,12 @@ describe('wonderful helpers', () => {
       expect(buildWonderfulPayload(['hello', 'world'])).toEqual({ payload: { message: 'hello world' } });
     });
 
+    it('includes reply text when provided', () => {
+      expect(buildWonderfulPayload(['hello'], 'quoted message')).toEqual({
+        payload: { message: 'hello', reply: 'quoted message' },
+      });
+    });
+
     it('returns null for empty payload', () => {
       expect(buildWonderfulPayload([])).toBeNull();
       expect(buildWonderfulPayload(['   '])).toBeNull();
