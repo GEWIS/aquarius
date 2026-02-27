@@ -36,6 +36,89 @@ function extractReplyText(ctx: CommandContext): string | undefined {
   return typeof alt === 'string' && alt.trim() !== '' ? alt : undefined;
 }
 
+async function pollWonderfulTask(
+  ctx: CommandContext,
+  taskId: string,
+  opts: {
+    apiUrl: string;
+    apiKey: string;
+    pollIntervalMs: number;
+    pollTimeoutMs: number;
+    terminalGraceMs: number;
+  },
+): Promise<void> {
+  const { apiUrl, apiKey, pollIntervalMs, pollTimeoutMs, terminalGraceMs } = opts;
+  const deadline = Date.now() + pollTimeoutMs;
+  let lastSeenEventIndex = -1;
+  let terminalStatus: 'completed' | 'failed' | null = null;
+  let terminalGraceUntil: number | null = null;
+  let emittedAnyAgentText = false;
+
+  try {
+    while (Date.now() < deadline) {
+      try {
+        const remainingMs = deadline - Date.now();
+        const requestTimeoutMs = Math.max(5_000, Math.min(30_000, remainingMs));
+        const res = await axios.get<WonderfulGetTaskResponse>(`${apiUrl.replace(/\/$/, '')}/api/v1/tasks/${taskId}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+          },
+          timeout: requestTimeoutMs,
+        });
+
+        const { task, events } = extractTaskAndEvents(res.data);
+        const picked = pickAgentTexts(events, lastSeenEventIndex);
+        lastSeenEventIndex = picked.newLastSeenEventIndex;
+
+        for (const text of picked.texts) {
+          emittedAnyAgentText = true;
+          await reply(ctx.msg, text);
+        }
+
+        const status = task?.status;
+        if (status === 'completed' || status === 'failed') {
+          if (terminalStatus === null) {
+            terminalStatus = status;
+            terminalGraceUntil = Math.min(deadline, Date.now() + terminalGraceMs);
+          }
+          if (terminalGraceUntil !== null && Date.now() >= terminalGraceUntil) {
+            if (!emittedAnyAgentText) {
+              const fallback =
+                terminalStatus === 'failed'
+                  ? (task?.error_reason ?? task?.resolution_summary)
+                  : task?.resolution_summary;
+              if (fallback) await reply(ctx.msg, fallback);
+            }
+
+            await emoji(ctx.msg, terminalStatus === 'completed' ? '✅' : '❌');
+            return;
+          }
+        } else if (status && status !== 'pending' && status !== 'live') {
+          await emoji(ctx.msg, '❌');
+          await reply(ctx.msg, `Wonderful task ended with status: ${status}`);
+          return;
+        }
+      } catch (e) {
+        if (axios.isAxiosError(e)) {
+          logger.error(
+            `Failed to poll Wonderful task (status=${e.response?.status ?? 'n/a'} url=${e.config?.url ?? 'n/a'}): ${e.message}`,
+          );
+        } else {
+          logger.error(`Failed to poll Wonderful task: ${String(e)}`);
+        }
+      }
+
+      await sleep(pollIntervalMs);
+    }
+
+    await emoji(ctx.msg, '⏱️');
+    logger.warn(`Wonderful polling timed out for task ${taskId}`);
+  } catch (e) {
+    logger.error(`Unexpected error in Wonderful background poller for task ${taskId}: ${String(e)}`);
+  }
+}
+
 export function registerWonderfulModule(api: ModuleApi) {
   const { commands } = api;
 
@@ -77,9 +160,8 @@ export function registerWonderfulModule(api: ModuleApi) {
       }
 
       const pollIntervalMs = parsePositiveInt(env.WONDERFUL_POLL_INTERVAL_MS, 2000);
-      const pollTimeoutMs = parsePositiveInt(env.WONDERFUL_POLL_TIMEOUT_MS, 60000);
+      const pollTimeoutMs = parsePositiveInt(env.WONDERFUL_POLL_TIMEOUT_MS, 300_000);
       const terminalGraceMs = Math.min(parsePositiveInt(env.WONDERFUL_TERMINAL_GRACE_MS, 20_000), pollTimeoutMs);
-      const createTimeoutMs = Math.min(10_000, pollTimeoutMs);
 
       await emoji(ctx.msg, '🔄');
 
@@ -90,7 +172,7 @@ export function registerWonderfulModule(api: ModuleApi) {
             'Content-Type': 'application/json',
             'x-webhook-secret': WONDERFUL_WEBHOOK_SECRET,
           },
-          timeout: createTimeoutMs,
+          timeout: 10_000,
         });
         taskId = extractCreatedTaskId(res.data) ?? '';
       } catch (e) {
@@ -112,74 +194,15 @@ export function registerWonderfulModule(api: ModuleApi) {
         return;
       }
 
-      const deadline = Date.now() + pollTimeoutMs;
-      let lastSeenEventIndex = -1;
-      let terminalStatus: 'completed' | 'failed' | null = null;
-      let terminalGraceUntil: number | null = null;
-      let emittedAnyAgentText = false;
-
-      while (Date.now() < deadline) {
-        try {
-          const remainingMs = deadline - Date.now();
-          const requestTimeoutMs = Math.max(1_000, Math.min(10_000, remainingMs));
-          const res = await axios.get<WonderfulGetTaskResponse>(
-            `${WONDERFUL_API_URL.replace(/\/$/, '')}/api/v1/tasks/${taskId}`,
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': WONDERFUL_API_KEY,
-              },
-              timeout: requestTimeoutMs,
-            },
-          );
-
-          const { task, events } = extractTaskAndEvents(res.data);
-          const picked = pickAgentTexts(events, lastSeenEventIndex);
-          lastSeenEventIndex = picked.newLastSeenEventIndex;
-
-          for (const text of picked.texts) {
-            emittedAnyAgentText = true;
-            await reply(ctx.msg, text);
-          }
-
-          const status = task?.status;
-          if (status === 'completed' || status === 'failed') {
-            if (terminalStatus === null) {
-              terminalStatus = status;
-              terminalGraceUntil = Math.min(deadline, Date.now() + terminalGraceMs);
-            }
-            if (terminalGraceUntil !== null && Date.now() >= terminalGraceUntil) {
-              if (!emittedAnyAgentText) {
-                const fallback =
-                  terminalStatus === 'failed'
-                    ? (task?.error_reason ?? task?.resolution_summary)
-                    : task?.resolution_summary;
-                if (fallback) await reply(ctx.msg, fallback);
-              }
-
-              await emoji(ctx.msg, terminalStatus === 'completed' ? '✅' : '❌');
-              return;
-            }
-          } else if (status && status !== 'pending' && status !== 'live') {
-            await emoji(ctx.msg, '❌');
-            await reply(ctx.msg, `Wonderful task ended with status: ${status}`);
-            return;
-          }
-        } catch (e) {
-          if (axios.isAxiosError(e)) {
-            logger.error(
-              `Failed to poll Wonderful task (status=${e.response?.status ?? 'n/a'} url=${e.config?.url ?? 'n/a'}): ${e.message}`,
-            );
-          } else {
-            logger.error(`Failed to poll Wonderful task: ${String(e)}`);
-          }
-        }
-
-        await sleep(pollIntervalMs);
-      }
-
-      await emoji(ctx.msg, '⏱️');
-      logger.warn(`Wonderful polling timed out for task ${taskId}`);
+      // Poll in the background — handler returns immediately so the bot stays
+      // responsive while the agent works.
+      void pollWonderfulTask(ctx, taskId, {
+        apiUrl: WONDERFUL_API_URL,
+        apiKey: WONDERFUL_API_KEY,
+        pollIntervalMs,
+        pollTimeoutMs,
+        terminalGraceMs,
+      });
     },
   });
 }
