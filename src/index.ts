@@ -34,9 +34,12 @@ function main() {
 
   source.onMessage(async (ctx: SignalMessage) => {
     void leren(ctx);
-    const mention =
-      ctx.rawMessage.envelope.dataMessage.mentions?.find((m) => m.number === ctx.account || m.uuid === ctx.account) !==
-      undefined;
+    const mentions = ctx.rawMessage.envelope.dataMessage.mentions ?? [];
+    logger.trace(
+      `[msg] account=${ctx.account} message=${JSON.stringify(ctx.message)} mentions=${JSON.stringify(mentions)}`,
+    );
+    const mention = mentions.find((m) => m.number === ctx.account || m.uuid === ctx.account) !== undefined;
+    logger.trace(`[msg] mention=${mention}`);
     if (mention) {
       await commands.execute(ctx);
     }
