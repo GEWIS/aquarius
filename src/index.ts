@@ -35,13 +35,13 @@ function main() {
   source.onMessage(async (ctx: SignalMessage) => {
     void leren(ctx);
     logger.trace(`[msg] raw=${JSON.stringify(ctx.rawMessage)}`);
-    logger.trace(`[msg] ctx=${JSON.stringify({ message: ctx.message, account: ctx.account, sourceUuid: ctx.sourceUuid, group: ctx.group })}`);
-    const mentions = ctx.rawMessage.envelope.dataMessage.mentions ?? [];
-    const mentionByField = mentions.find((m) => m.number === ctx.account || m.uuid === ctx.account) !== undefined;
-    const mentionByPlaceholder = ctx.message?.includes('\uFFFC') ?? false;
-    const mention = mentionByField || mentionByPlaceholder;
     logger.trace(
-      `[msg] account=${ctx.account} message=${JSON.stringify(ctx.message)} mentions=${JSON.stringify(mentions)} mentionByField=${mentionByField} mentionByPlaceholder=${mentionByPlaceholder}`,
+      `[msg] ctx=${JSON.stringify({ message: ctx.message, account: ctx.account, sourceUuid: ctx.sourceUuid, group: ctx.group })}`,
+    );
+    const mentions = ctx.rawMessage.envelope.dataMessage.mentions ?? [];
+    const mention = mentions.find((m) => m.number === ctx.account || m.uuid === ctx.account) !== undefined;
+    logger.trace(
+      `[msg] account=${ctx.account} message=${JSON.stringify(ctx.message)} mentions=${JSON.stringify(mentions)} mention=${mention}`,
     );
     if (mention) {
       await commands.execute(ctx);
