@@ -34,7 +34,9 @@ function main() {
 
   source.onMessage(async (ctx: SignalMessage) => {
     void leren(ctx);
-    const mention = ctx.rawMessage.envelope.dataMessage.mentions?.find((m) => m.number === ctx.account) !== undefined;
+    const mention =
+      ctx.rawMessage.envelope.dataMessage.mentions?.find((m) => m.number === ctx.account || m.uuid === ctx.account) !==
+      undefined;
     if (mention) {
       await commands.execute(ctx);
     }
