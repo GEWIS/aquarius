@@ -34,6 +34,7 @@ function main() {
 
   source.onMessage(async (ctx: SignalMessage) => {
     void leren(ctx);
+    logger.trace(`[msg] raw=${JSON.stringify(ctx.rawMessage)}`);
     const mentions = ctx.rawMessage.envelope.dataMessage.mentions ?? [];
     const mentionByField = mentions.find((m) => m.number === ctx.account || m.uuid === ctx.account) !== undefined;
     const mentionByPlaceholder = ctx.message?.includes('\uFFFC') ?? false;
