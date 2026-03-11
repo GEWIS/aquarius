@@ -34,14 +34,8 @@ function main() {
 
   source.onMessage(async (ctx: SignalMessage) => {
     void leren(ctx);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { client: _client, reply: _reply, ...loggableCtx } = ctx;
-    logger.trace(`[msg] ctx=${JSON.stringify(loggableCtx)}`);
     const mentions = ctx.rawMessage.envelope.dataMessage.mentions ?? [];
     const mention = mentions.find((m) => m.number === ctx.account || m.uuid === ctx.account) !== undefined;
-    logger.trace(
-      `[msg] account=${ctx.account} message=${JSON.stringify(ctx.message)} mentions=${JSON.stringify(mentions)} mention=${mention}`,
-    );
     if (mention) {
       await commands.execute(ctx);
     }
